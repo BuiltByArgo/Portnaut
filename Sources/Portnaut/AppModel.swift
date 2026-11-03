@@ -88,6 +88,24 @@ final class AppModel: ObservableObject {
     @Published var namingSnapshot: Bottle?
     @Published var snapshotName = ""
     @Published var bottlePendingRemoval: Bottle?
+    /// Highball's compatibility database, read once in the background and after Component Updates.
+    @Published var compatibility: CompatibilityDatabase?
+    /// Keyed by LibraryEntry.id.
+    @Published var reports: [String: CompatibilityReport] = [:]
+    @Published var showingWillItRun = false
+    @Published var willItRunQuery = ""
+    /// A Steam download of a game that cannot run, named once per game.
+    @Published var downloadWarning: String?
+    /// Couch mode: the library full screen, for a controller and a TV.
+    @Published var couchMode = false
+    @Published var couchIndex = 0
+    /// Y pressed once while a game runs; a second press within three seconds stops the session.
+    @Published var couchStopArmed = false
+    var couchKeyMonitor: Any?
+    /// Bottles whose running session is a best-setup round.
+    @Published var roundSessions: Set<String> = []
+    var couchStick = StickRepeat()
+    var couchEnteredFullScreen = false
     private var analyzedPaths: [String: String] = [:]
     private var stopRequested: Set<String> = []
     /// Detection retries stop after one failure so the alert is not repeated every refresh.
@@ -104,9 +122,14 @@ final class AppModel: ObservableObject {
 
     init() {
         refresh()
+        loadCompatibility()
         updateChannel = service.updateChannel
         // Launch argument for checking the window: -PortnautShowUpdates YES
         if UserDefaults.standard.bool(forKey: "PortnautShowUpdates") { openComponentUpdates() }
+        // Launch argument for checking the sheet: -PortnautShowWillItRun "<title>"
+        if let query = UserDefaults.standard.string(forKey: "PortnautShowWillItRun") { willItRunQuery = query; showingWillItRun = true }
+        // Launch argument for checking the sheet: -PortnautShowNewBottle YES
+        showingNewBottle = UserDefaults.standard.bool(forKey: "PortnautShowNewBottle")
         // Launch argument for checking the sheet: -PortnautInitialGameSettings <game id>
         if let id = UserDefaults.standard.string(forKey: "PortnautInitialGameSettings") { editingGame = entries.first { $0.game.id == id } }
         updateControllers()
@@ -114,6 +137,15 @@ final class AppModel: ObservableObject {
             NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.updateControllers() }
             }
+        }
+        for controller in GCController.controllers() { attachCouchControls(controller) }
+        NotificationCenter.default.addObserver(forName: .GCControllerDidConnect, object: nil, queue: .main) { [weak self] note in
+            guard let controller = note.object as? GCController else { return }
+            MainActor.assumeIsolated { self?.controllerConnected(controller) }
+        }
+        // Launch argument for checking the view: -PortnautCouchMode YES
+        if UserDefaults.standard.bool(forKey: "PortnautCouchMode") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in MainActor.assumeIsolated { self?.enterCouchMode() } }
         }
         // Reattach to sessions that survived closing Portnaut. -w never starts Wine.
         if runtimeReady {
@@ -145,11 +177,43 @@ final class AppModel: ObservableObject {
         previousRuntime = service.previousRuntime()
         snapshots = Dictionary(uniqueKeysWithValues: library.bottles.map { ($0.id, service.snapshots(of: $0)) })
         saveBackups = Dictionary(uniqueKeysWithValues: library.bottles.map { ($0.id, service.saveBackups(of: $0)) })
+        updateReports()
+        warnAboutSteamDownloads()
         if let attributes = try? FileManager.default.attributesOfFileSystem(forPath: NSHomeDirectory()), let free = attributes[.systemFreeSize] as? NSNumber {
             freeSpace = ByteCountFormatter.string(fromByteCount: free.int64Value, countStyle: .file)
         }
     }
     func update(_ value: SetupProgress) { progress = value.fraction; message = value.message }
+
+    // MARK: - Compatibility
+
+    /// Reads the newer of the bundled and downloaded databases off the main thread.
+    func loadCompatibility() {
+        Task {
+            compatibility = await Task.detached { [service] in service.compatibilityDatabase() }.value
+            updateReports()
+        }
+    }
+    private func updateReports() {
+        reports = Dictionary(uniqueKeysWithValues: entries.compactMap { entry in
+            service.compatibilityReport(for: entry.game, in: entry.bottle, database: compatibility).map { (entry.id, $0) }
+        })
+    }
+    /// Steam writes a game's manifest when its download starts: a game that cannot run is named
+    /// then, once, rather than after the download.
+    private func warnAboutSteamDownloads() {
+        guard let compatibility, downloadWarning == nil else { return }
+        var warned = Set(UserDefaults.standard.array(forKey: "PortnautWarnedDownloads") as? [Int] ?? [])
+        for bottle in library.bottles where bottle.launcher == .steam && ready(bottle) {
+            for download in ProgramScanner.steamDownloads(drive: service.paths.bottle(bottle).drive) where !warned.contains(download.appID) {
+                guard let report = compatibility.report(steamAppID: download.appID, title: download.name), report.status == .blocked else { continue }
+                warned.insert(download.appID)
+                UserDefaults.standard.set(Array(warned), forKey: "PortnautWarnedDownloads")
+                downloadWarning = "Steam is downloading \(download.name) in \(bottle.name). \(report.explanation) You can cancel the download in Steam’s Downloads page."
+                return
+            }
+        }
+    }
 
     /// Runs a setup task with the progress bar; refreshes afterwards.
     private func perform(_ status: String, _ work: @escaping () async throws -> String) {
@@ -172,9 +236,9 @@ final class AppModel: ObservableObject {
             return library.bottles.isEmpty ? "Portnaut is ready. Create a bottle for your first launcher or game." : "Portnaut is up to date. Your bottles, games and sign-ins were kept."
         }
     }
-    func createBottle(name: String, launcher: Launcher?, renderer: Renderer, windowsVersion: WindowsVersion) {
+    func createBottle(name: String, launcher: Launcher?, renderer: Renderer, windowsVersion: WindowsVersion, easyMode: Bool) {
         perform("Creating \(name)…") { [self] in
-            let bottle = try await service.createBottle(name: name, launcher: launcher, renderer: renderer, windowsVersion: windowsVersion)
+            let bottle = try await service.createBottle(name: name, launcher: launcher, renderer: renderer, windowsVersion: windowsVersion, easyMode: easyMode)
             selectedBottleID = bottle.id
             page = .bottles
             return launcher.map { "\(bottle.name) is ready. Next, install \($0.title)." } ?? "\(bottle.name) is ready. Add a game or run an installer in it."
@@ -222,7 +286,9 @@ final class AppModel: ObservableObject {
             } catch {
                 if !stopRequested.contains(bottle.id) { self.error = error.localizedDescription }
             }
-            sessions.remove(bottle.id); refresh(); readLog()
+            sessions.remove(bottle.id); roundSessions.remove(bottle.id); refresh(); readLog()
+            // Back to the couch library when the game closes.
+            if couchMode { NSApplication.shared.activate(ignoringOtherApps: true) }
         }
     }
     func installLauncher(_ bottle: Bottle) {
@@ -242,6 +308,11 @@ final class AppModel: ObservableObject {
         startSession(bottle, "Continue in the \(bottle.launcher?.title ?? "launcher") window.") { [service] in try await service.launchLauncher(bottle) }
     }
     func play(_ entry: LibraryEntry) {
+        // A best-setup round must start the session itself: Portnaut switches the renderer and records it.
+        if entry.game.setupTrial?.next != nil, sessionActive(entry.bottle) {
+            error = "Close \(entry.bottle.launcher?.title ?? entry.bottle.name) first, or stop its session. A round starts the session itself, so Portnaut can switch the renderer and record it."
+            return
+        }
         // A game the launcher starts can be handed to the launcher already open.
         if sessionActive(entry.bottle), entry.game.launcherArguments != nil, let launcher = entry.bottle.launcher {
             message = "Asked \(launcher.title) to start \(entry.game.name)."
@@ -251,11 +322,39 @@ final class AppModel: ObservableObject {
             }
             return
         }
-        startSession(entry.bottle, "Starting \(entry.game.name)…") { [service] in try await service.launchGame(entry.game, in: entry.bottle) }
+        let database = compatibility
+        var status = "Starting \(entry.game.name)…"
+        if let trial = entry.game.setupTrial, let round = trial.next {
+            status = "Best setup, round \(trial.round) of \(trial.renderers.count): starting \(entry.game.name) on \(round.title)…"
+        } else if entry.bottle.easyMode, let choice = service.easyModeChoice(for: entry.game, in: entry.bottle, report: reports[entry.id]), choice.renderer != entry.bottle.renderer {
+            status = "Switching \(entry.bottle.name) to \(choice.renderer.title) for \(entry.game.name), then starting it…"
+        }
+        if entry.game.setupTrial?.next != nil { roundSessions.insert(entry.bottle.id) }
+        startSession(entry.bottle, status) { [service] in try await service.launchGame(entry.game, in: entry.bottle, compatibility: database) }
     }
     /// Play stays available while the bottle runs if its launcher can take the game.
     func canPlay(_ entry: LibraryEntry) -> Bool {
         !busy && runtimeReady && (!sessionActive(entry.bottle) || (entry.game.launcherArguments != nil && installedLaunchers.contains(entry.bottle.id)))
+    }
+
+    // MARK: - Find my best setup
+
+    func startBestSetup(_ entry: LibraryEntry) {
+        do {
+            let trial = try service.startSetupTrial(for: entry.game, in: entry.bottle)
+            message = "\(entry.game.name): \(trial.renderers.count) rounds, on \(CompatibilityReport.list(trial.renderers.map(\.title)))."
+        } catch { self.error = error.localizedDescription }
+        refresh()
+    }
+    func cancelBestSetup(_ entry: LibraryEntry) {
+        do { try service.cancelSetupTrial(for: entry.game, in: entry.bottle) } catch { self.error = error.localizedDescription }
+        refresh()
+    }
+    func keepBestSetup(_ entry: LibraryEntry) {
+        perform("Keeping \(entry.game.name)’s best setup…") { [self] in
+            let best = try await service.keepSetupTrial(for: entry.game, in: entry.bottle)
+            return entry.bottle.easyMode ? "\(entry.game.name) will start on \(best.renderer.title)." : "\(entry.bottle.name) now uses \(best.renderer.title), fastest for \(entry.game.name)."
+        }
     }
 
     // MARK: - Settings, components and controllers
@@ -298,10 +397,18 @@ final class AppModel: ObservableObject {
         showingUpdates = true
         if updateCheck.map({ Date().timeIntervalSince($0.checkedAt) > 600 }) ?? true { checkForUpdates() }
     }
+    /// Refreshes the compatibility database with the component check; a failed download keeps the copy.
+    private func refreshCompatibility() {
+        Task {
+            try? await service.refreshCompatibility()
+            loadCompatibility()
+        }
+    }
     func checkForUpdates() {
         guard !checkingUpdates else { return }
         checkingUpdates = true
         Task {
+            refreshCompatibility()
             do { updateCheck = try await RuntimeUpdates.check(); updateCheckError = nil }
             catch { updateCheckError = "Couldn’t check for updates: \(error.localizedDescription)" }
             checkingUpdates = false
@@ -499,7 +606,7 @@ final class AppModel: ObservableObject {
             guard let content = try? String(contentsOf: url, encoding: .utf8) else { return nil }
             return "— \(url.lastPathComponent) —\n" + content.split(separator: "\n", omittingEmptySubsequences: false).suffix(150).joined(separator: "\n")
         }.joined(separator: "\n\n")
-        if logText.isEmpty { logText = "No activity yet. Prepare Portnaut to get started." }
+        if logText.isEmpty { logText = runtimeReady ? "No activity yet." : "No activity yet. Prepare Portnaut to get started." }
     }
     func exportDiagnostics() {
         readLog()

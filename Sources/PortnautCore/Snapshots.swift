@@ -22,6 +22,8 @@ public struct SaveBackup: Codable, Equatable, Sendable, Identifiable {
     public var folders: [String]
     public var bytes: Int64
     public var files: Int
+    /// Taken by Portnaut before a game started; nil in backups from before 0.10.0.
+    public var automatic: Bool?
 }
 
 extension PortnautPaths {
@@ -135,7 +137,7 @@ extension WineService {
     /// Copies the bottle's save folders, without caches, logs and Windows' own data. On the same
     /// disk the files are APFS clones; Time Machine backs them up like other documents.
     @discardableResult
-    public func backUpSaves(of bottle: Bottle) async throws -> SaveBackup {
+    public func backUpSaves(of bottle: Bottle, automatic: Bool = false) async throws -> SaveBackup {
         let drive = paths.bottle(bottle).drive
         let folders = SaveLocations.existing(in: drive)
         guard !folders.isEmpty else { throw PortnautError("\(bottle.name) has no save folders yet.") }
@@ -143,7 +145,10 @@ extension WineService {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
         let date = Date()
-        let destination = paths.saveBackups.appendingPathComponent(bottle.id).appendingPathComponent(formatter.string(from: date))
+        // Backups in the same second (an automatic one right after one of the owner's) get a number.
+        let base = paths.saveBackups.appendingPathComponent(bottle.id).appendingPathComponent(formatter.string(from: date))
+        var destination = base, number = 2
+        while FileManager.default.fileExists(atPath: destination.path) { destination = URL(fileURLWithPath: base.path + " \(number)"); number += 1 }
         let (files, bytes) = try await Task.detached { () -> (Int, Int64) in
             var files = 0, bytes: Int64 = 0
             for folder in folders {
@@ -152,9 +157,19 @@ extension WineService {
             }
             return (files, bytes)
         }.value
-        let backup = SaveBackup(id: destination.lastPathComponent, date: date, bottleName: bottle.name, folders: folders, bytes: bytes, files: files)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let backup = SaveBackup(id: destination.lastPathComponent, date: date, bottleName: bottle.name, folders: folders, bytes: bytes, files: files, automatic: automatic ? true : nil)
         try Self.json.encoder.encode(backup).write(to: destination.appendingPathComponent("backup.json"), options: .atomic)
+        if automatic { pruneAutomaticBackups(of: bottle) }
         return backup
+    }
+
+    /// Deletes Portnaut's own automatic save backups beyond the newest `keep`. Backups the owner
+    /// made are never deleted.
+    func pruneAutomaticBackups(of bottle: Bottle, keep: Int = 10) {
+        for old in saveBackups(of: bottle).filter({ $0.automatic == true }).dropFirst(keep) {
+            try? FileManager.default.removeItem(at: paths.saveBackups.appendingPathComponent(bottle.id).appendingPathComponent(old.id))
+        }
     }
 
     /// Copies a backup's files back over the bottle's, after an automatic snapshot. Files the backup

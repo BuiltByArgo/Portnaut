@@ -16,13 +16,18 @@ public enum WindowsVersion: String, Codable, CaseIterable, Sendable, Identifiabl
 
 /// Store launchers Portnaut knows how to install and start.
 public enum Launcher: String, Codable, CaseIterable, Sendable, Identifiable {
-    case ubisoft, steam, ea
+    case ubisoft, steam, ea, epic, battlenet, rockstar, gog, amazon
     public var id: String { rawValue }
     public var title: String {
         switch self {
         case .ubisoft: "Ubisoft Connect"
         case .steam: "Steam"
         case .ea: "EA app"
+        case .epic: "Epic Games Launcher"
+        case .battlenet: "Battle.net"
+        case .rockstar: "Rockstar Games Launcher"
+        case .gog: "GOG Galaxy"
+        case .amazon: "Amazon Games"
         }
     }
     public var symbol: String {
@@ -30,14 +35,24 @@ public enum Launcher: String, Codable, CaseIterable, Sendable, Identifiable {
         case .ubisoft: "gamecontroller"
         case .steam: "cloud"
         case .ea: "bolt.horizontal"
+        case .epic: "sparkles"
+        case .battlenet: "shield"
+        case .rockstar: "star"
+        case .gog: "circle.hexagongrid"
+        case .amazon: "shippingbox"
         }
     }
-    /// Relative to drive_c.
+    /// Relative to drive_c. `users/*/` matches any Windows user folder.
     public var executable: String {
         switch self {
         case .ubisoft: "Program Files (x86)/Ubisoft/Ubisoft Game Launcher/UbisoftConnect.exe"
         case .steam: "Program Files (x86)/Steam/steam.exe"
         case .ea: "Program Files/Electronic Arts/EA Desktop/EA Desktop/EALauncher.exe"
+        case .epic: "Program Files/Epic Games/Launcher/Portal/Binaries/Win64/EpicGamesLauncher.exe"
+        case .battlenet: "Program Files (x86)/Battle.net/Battle.net Launcher.exe"
+        case .rockstar: "Program Files/Rockstar Games/Launcher/LauncherPatcher.exe"
+        case .gog: "Program Files/GOG Galaxy/GalaxyClient.exe"
+        case .amazon: "users/*/AppData/Local/Amazon Games/App/Amazon Games.exe"
         }
     }
     /// Steam draws its interface in software: its web helper's GPU process cannot draw into a window
@@ -46,7 +61,7 @@ public enum Launcher: String, Codable, CaseIterable, Sendable, Identifiable {
         switch self {
         case .ubisoft: GraphicsProfile.connectBrowserArguments
         case .steam: ["-cef-disable-gpu"]
-        case .ea: []
+        case .ea, .epic, .battlenet, .rockstar, .gog, .amazon: []
         }
     }
     /// The publishers' own download links.
@@ -55,6 +70,11 @@ public enum Launcher: String, Codable, CaseIterable, Sendable, Identifiable {
         case .ubisoft: URL(string: "https://static3.cdn.ubi.com/orbit/launcher_installer/UbisoftConnectInstaller.exe")!
         case .steam: URL(string: "https://cdn.fastly.steamstatic.com/client/installer/SteamSetup.exe")!
         case .ea: URL(string: "https://origin-a.akamaihd.net/EA-Desktop-Client-Download/installer-releases/EAappInstaller.exe")!
+        case .epic: URL(string: "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi")!
+        case .battlenet: URL(string: "https://downloader.battle.net/download/getInstallerForGame?os=win&gameProgram=BATTLENET_APP&version=Live")!
+        case .rockstar: URL(string: "https://gamedownloads.rockstargames.com/public/installer/Rockstar-Games-Launcher.exe")!
+        case .gog: URL(string: "https://webinstallers.gog-statics.com/download/GOG_Galaxy_2.0.exe")!
+        case .amazon: URL(string: "https://download.amazongames.com/AmazonGamesSetup.exe")!
         }
     }
     public var installerName: String {
@@ -62,14 +82,25 @@ public enum Launcher: String, Codable, CaseIterable, Sendable, Identifiable {
         case .ubisoft: "UbisoftConnectInstaller.exe"
         case .steam: "SteamSetup.exe"
         case .ea: "EAappInstaller.exe"
+        case .epic: "EpicGamesLauncherInstaller.msi"
+        case .battlenet: "Battle.net-Setup.exe"
+        case .rockstar: "Rockstar-Games-Launcher.exe"
+        case .gog: "GOG_Galaxy_2.0.exe"
+        case .amazon: "AmazonGamesSetup.exe"
         }
     }
-    /// Steam's installer runs silently; the EA app's does not start the app when it finishes.
+    /// The Epic Games Launcher comes as a Windows Installer package, run through msiexec.
+    public var installerIsPackage: Bool { installerName.lowercased().hasSuffix(".msi") }
+    /// Steam's installer runs silently; the EA app's does not start the app when it finishes. Epic's
+    /// package shows only its progress: its one question is the folder, and the launcher must stay
+    /// where Portnaut looks for it.
     public var installerArguments: [String] {
         switch self {
         case .ubisoft: []
         case .steam: ["/S"]
         case .ea: ["EAX_LAUNCH_CLIENT=0"]
+        case .epic: ["/passive"]
+        case .battlenet, .rockstar, .gog, .amazon: []
         }
     }
     /// Folders, relative to drive_c, where the launcher installs games by default.
@@ -78,6 +109,12 @@ public enum Launcher: String, Codable, CaseIterable, Sendable, Identifiable {
         case .ubisoft: ["Program Files (x86)/Ubisoft/Ubisoft Game Launcher/games", "Games"]
         case .steam: ["Program Files (x86)/Steam/steamapps/common"]
         case .ea: ["Program Files/EA Games", "Program Files (x86)/EA Games"]
+        case .epic: ["Program Files/Epic Games"]
+        // Battle.net gives every game its own folder in Program Files (x86); its shortcuts find them.
+        case .battlenet: []
+        case .rockstar: ["Program Files/Rockstar Games"]
+        case .gog: ["Program Files/GOG Galaxy/Games", "Program Files (x86)/GOG Galaxy/Games", "GOG Games"]
+        case .amazon: ["Amazon Games/Library"]
         }
     }
     public var recommendation: Recommendation {
@@ -88,7 +125,36 @@ public enum Launcher: String, Codable, CaseIterable, Sendable, Identifiable {
             Recommendation(renderer: .d3dmetal, reason: "Most Steam games are 64-bit DirectX 11 or 12, and D3DMetal runs both. Steam’s own window is drawn in software whatever the renderer. Once a game is installed, Portnaut reads it and suggests DXMT for DirectX 11 games.")
         case .ea:
             Recommendation(renderer: .d3dmetal, reason: "EA’s recent games are mostly 64-bit DirectX 11 or 12, and D3DMetal runs both. Games with EA’s kernel anti-cheat, such as EA Sports FC and Battlefield, do not run under Wine.")
+        case .epic:
+            Recommendation(renderer: .d3dmetal, reason: "Most Epic games are 64-bit Unreal Engine games on DirectX 11 or 12, and D3DMetal runs both. Once a game is installed, Portnaut reads it and suggests DXMT for DirectX 11 games.")
+        case .battlenet:
+            Recommendation(renderer: .d3dmetal, reason: "Blizzard’s current Windows games, such as Diablo IV and Overwatch 2, are 64-bit DirectX 11 or 12, and D3DMetal runs both.")
+        case .rockstar:
+            Recommendation(renderer: .dxmt, reason: "The Rockstar Games Launcher starts on DXMT and DXVK, not on D3DMetal (tested). DXMT runs DirectX 11 games such as GTA V; in Red Dead Redemption 2, choose Vulkan in its graphics settings, as its DirectX 12 mode needs D3DMetal.")
+        case .gog:
+            Recommendation(renderer: .dxvk, reason: "Many GOG games are older 32-bit DirectX 9 games, and DXVK is the fast renderer that covers them. Once a game is installed, Portnaut reads it and suggests a renderer for it.")
+        case .amazon:
+            Recommendation(renderer: .d3dmetal, reason: "Most Amazon Games titles are 64-bit DirectX 11 or 12, and D3DMetal runs both. Once a game is installed, Portnaut reads it and suggests a renderer for it.")
         }
+    }
+    /// Renderers the launcher does not start on. Its games inherit the launcher's Wine, so the whole
+    /// bottle stays off them.
+    public var unsupportedRenderers: Set<Renderer> {
+        switch self {
+        // The launcher draws with Direct2D, which goes through Wine's own Direct3D 10 on top of the
+        // bottle's DXGI. D3DMetal replaces DXGI but not Direct3D 10, and the launcher reports that it
+        // failed to initialize (tested; DXMT and DXVK replace both).
+        case .rockstar: [.d3dmetal]
+        // DXVK would draw Ubisoft Connect's 32-bit browser too, and its sign-in then fails (0.1.1).
+        case .ubisoft: [.dxvk]
+        // Galaxy's window stays white on Wine's own Direct3D (tested).
+        case .gog: [.wined3d]
+        case .steam, .ea, .epic, .battlenet, .amazon: []
+        }
+    }
+    /// A recommendation for a game or bottle of this launcher, kept to renderers the launcher starts on.
+    public func adjusted(_ recommendation: Recommendation) -> Recommendation {
+        unsupportedRenderers.contains(recommendation.renderer) ? self.recommendation : recommendation
     }
     /// Registry values for the launcher's own programs, applied with the bottle's profile.
     public var registry: String {
@@ -99,12 +165,45 @@ public enum Launcher: String, Codable, CaseIterable, Sendable, Identifiable {
             // its window, so the interface is not black, without replacing Steam's files.
             return """
             [HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\steamwebhelper.exe]
-            "CommandLineAppend"="\(GraphicsProfile.steamWebHelperSwitches)"
+            "CommandLineAppend"="\(GraphicsProfile.softwareBrowserSwitches)"
 
             """
-        case .ubisoft, .ea:
+        case .battlenet, .amazon, .rockstar:
+            // Battle.net and Rockstar's Social Club (CEF) and Amazon Games (Electron) draw in Chromium like
+            // Steam's web helper, with the same limit: without this their windows stay white (tested;
+            // Amazon Games then quits at sign-in, and Social Club drew only when its GPU process failed).
+            let program = switch self {
+            case .battlenet: "Battle.net.exe"
+            case .rockstar: "SocialClubHelper.exe"
+            default: "Amazon Games UI.exe"
+            }
+            return """
+            [HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\\(program)]
+            "CommandLineAppend"="\(GraphicsProfile.softwareBrowserSwitches)"
+
+            """
+        case .ubisoft, .ea, .epic, .gog:
             return ""
         }
+    }
+    /// GOG Galaxy's system-wide settings and lock files, relative to drive_c.
+    public static let galaxySettings = "ProgramData/GOG.com/Galaxy/config.json"
+    public static let galaxyLockFiles = "ProgramData/GOG.com/Galaxy/lock-files"
+    /// Galaxy's settings with Chromium's GPU turned off for its interface, or nil when the file
+    /// cannot be read as settings. Galaxy draws in Qt WebEngine, which hands each page to Qt as a
+    /// shared Direct3D texture that no Mac renderer provides, so the window stays grey (tested).
+    /// Galaxy replaces QTWEBENGINE_CHROMIUM_FLAGS and ignores switches on its command line; its
+    /// chromiumClientAppArguments setting, a map of switch to value, adds them.
+    public static func galaxySettings(merging data: Data?) -> Data? {
+        var settings: [String: Any] = [:]
+        if let data, !data.isEmpty {
+            guard let read = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+            settings = read
+        }
+        var switches = settings["chromiumClientAppArguments"] as? [String: Any] ?? [:]
+        switches["--disable-gpu"] = ""
+        settings["chromiumClientAppArguments"] = switches
+        return try? JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
     }
     /// The launcher whose program this is, by file name.
     public static func owning(_ executable: String) -> Launcher? {
@@ -195,6 +294,10 @@ public struct Game: Codable, Equatable, Sendable, Identifiable {
     public var performance: [PerformanceRun] = []
     public var addedAt: Date?
     public var lastPlayedAt: Date?
+    /// "Find my best setup" in progress.
+    public var setupTrial: SetupTrial?
+    /// The renderer measured fastest on this Mac; easy mode starts the game there.
+    public var bestSetup: MeasuredSetup?
     public init(id: String, name: String, executable: String) {
         self.id = id
         self.name = name
@@ -205,6 +308,7 @@ public struct Game: Codable, Equatable, Sendable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, executable, arguments, launcherArguments, environment, dllOverrides, windowsVersion, performance, addedAt, lastPlayedAt
+        case setupTrial, bestSetup
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -219,6 +323,8 @@ public struct Game: Codable, Equatable, Sendable, Identifiable {
         performance = try c.value(.performance, default: [])
         addedAt = try c.decodeIfPresent(Date.self, forKey: .addedAt)
         lastPlayedAt = try c.decodeIfPresent(Date.self, forKey: .lastPlayedAt)
+        setupTrial = try c.decodeIfPresent(SetupTrial.self, forKey: .setupTrial)
+        bestSetup = try c.decodeIfPresent(MeasuredSetup.self, forKey: .bestSetup)
     }
 }
 
@@ -242,6 +348,12 @@ public struct Bottle: Codable, Equatable, Sendable, Identifiable {
     public var components: [String: Date] = [:]
     public var games: [Game] = []
     public var createdAt: Date?
+    /// Easy mode: before Portnaut starts a game, the bottle switches to the renderer the game was
+    /// tested on, else the one its files suggest, within what the bottle's launcher starts on.
+    public var easyMode = false
+    /// Copies the bottle's saves to Portnaut Backups before every game Portnaut starts; the ten
+    /// newest of these copies are kept.
+    public var autoBackupSaves = false
     /// Wine's Retina mode: High Resolution Mode, except while MetalFX upscales to Retina instead.
     public var retinaMode: Bool { highResolution && !metalFXActive }
     public var metalFXActive: Bool { renderer == .dxmt && options.metalFXUpscaling }
@@ -262,6 +374,7 @@ public struct Bottle: Codable, Equatable, Sendable, Identifiable {
     // Files from before 0.7.0 may hold connectGPUOverride, a removed Ubisoft Connect setting; it is ignored.
     enum CodingKeys: String, CodingKey {
         case id, name, launcher, renderer, windowsVersion, highResolution, msync, options, environment, controllers, components, games, createdAt
+        case easyMode, autoBackupSaves
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -278,6 +391,9 @@ public struct Bottle: Codable, Equatable, Sendable, Identifiable {
         components = try c.value(.components, default: [:])
         games = try c.value(.games, default: [])
         createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
+        // Bottles from before 0.10.0 keep working as they did until the owner turns these on.
+        easyMode = try c.value(.easyMode, default: false)
+        autoBackupSaves = try c.value(.autoBackupSaves, default: false)
     }
 }
 

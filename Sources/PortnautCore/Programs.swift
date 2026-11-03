@@ -4,6 +4,7 @@ import Foundation
 public struct DetectedProgram: Equatable, Sendable, Identifiable {
     public enum Source: String, Sendable {
         case shortcut = "Start Menu or Desktop shortcut", steam = "Steam library", ea = "EA app library", ubisoft = "Ubisoft Connect games folder", known = "Known game"
+        case epic = "Epic Games library", gog = "GOG game record", amazon = "Amazon Games library", rockstar = "Rockstar Games folder"
     }
     public var name: String
     /// Relative to drive_c.
@@ -32,7 +33,8 @@ public enum ProgramScanner {
     public static func scan(drive: URL, reliableOnly: Bool = false, steamAppsInLibrary: Set<String> = []) -> [DetectedProgram] {
         var seen = Set<String>(), found: [DetectedProgram] = []
         let candidates = steamGames(drive: drive, excluding: steamAppsInLibrary) + eaGames(drive: drive, listedOnly: reliableOnly)
-            + ubisoftGames(drive: drive, knownOnly: reliableOnly) + (reliableOnly ? [] : shortcuts(drive: drive))
+            + ubisoftGames(drive: drive, knownOnly: reliableOnly) + epicGames(drive: drive) + gogGames(drive: drive) + amazonGames(drive: drive)
+            + (reliableOnly ? [] : rockstarGames(drive: drive) + shortcuts(drive: drive))
         for program in candidates where Launcher.owning(program.executable) == nil && seen.insert(program.executable.lowercased()).inserted {
             found.append(program)
         }
@@ -96,6 +98,26 @@ public enum ProgramScanner {
                 var program = DetectedProgram(name: app.name, executable: relative, launcherArguments: ["-applaunch", app.id], source: .steam)
                 program.reliable = true
                 found.append(program)
+            }
+        }
+        return found
+    }
+
+    /// Steam apps queued or downloading, not installed yet: Steam writes an app's manifest when its
+    /// download starts, so a game that cannot run can be named before it finishes.
+    public static func steamDownloads(drive: URL) -> [(appID: Int, name: String)] {
+        var libraries = [steamRoot]
+        if let vdf = try? String(contentsOf: drive.appendingPathComponent(steamRoot + "/steamapps/libraryfolders.vdf"), encoding: .utf8) {
+            libraries += values(of: "path", in: vdf).compactMap { relativePath(fromWindows: $0.replacingOccurrences(of: "\\\\", with: "\\")) }
+        }
+        var found: [(Int, String)] = [], seen = Set<Int>()
+        for library in libraries {
+            let apps = drive.appendingPathComponent(library + "/steamapps")
+            for manifest in (try? FileManager.default.contentsOfDirectory(at: apps, includingPropertiesForKeys: nil)) ?? []
+            where manifest.lastPathComponent.hasPrefix("appmanifest_") && manifest.pathExtension == "acf" {
+                guard let text = try? String(contentsOf: manifest, encoding: .utf8), let app = SteamApp(manifest: text),
+                      !app.installed, app.id != "228980", let id = Int(app.id), seen.insert(id).inserted else { continue }
+                found.append((id, app.name))
             }
         }
         return found
@@ -173,6 +195,110 @@ public enum ProgramScanner {
                           let relative = try? BottlePaths.relative(executable, drive: drive) {
                     found.append(DetectedProgram(name: folder.lastPathComponent, executable: relative, source: .ubisoft))
                 }
+            }
+        }
+        return found
+    }
+
+    /// Games the Epic Games Launcher installed, from its manifests. They start through the launcher,
+    /// which signs the game in to Epic's online services.
+    public static func epicGames(drive: URL) -> [DetectedProgram] {
+        let manifests = drive.appendingPathComponent("ProgramData/Epic/EpicGamesLauncher/Data/Manifests")
+        var found: [DetectedProgram] = []
+        for file in ((try? FileManager.default.contentsOfDirectory(at: manifests, includingPropertiesForKeys: nil)) ?? []).sorted(by: { $0.path < $1.path })
+        where file.pathExtension.lowercased() == "item" {
+            guard let data = try? Data(contentsOf: file), let item = EpicManifest(data) else { continue }
+            let folder = drive.appendingPathComponent(item.installFolder)
+            guard let executable = item.executable.map({ folder.appendingPathComponent($0) }) ?? mainExecutable(in: folder, name: item.name),
+                  FileManager.default.fileExists(atPath: executable.path), let relative = try? BottlePaths.relative(executable, drive: drive) else { continue }
+            var program = DetectedProgram(name: item.name, executable: relative, launcherArguments: [item.launchURI], source: .epic)
+            program.reliable = true
+            found.append(program)
+        }
+        return found
+    }
+
+    struct EpicManifest {
+        var name: String, installFolder: String, executable: String?, launchURI: String
+        init?(_ data: Data) {
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let name = json["DisplayName"] as? String, let location = (json["InstallLocation"] as? String).flatMap(ProgramScanner.relativePath(fromWindows:)),
+                  let app = json["AppName"] as? String, let namespace = json["CatalogNamespace"] as? String, let item = json["CatalogItemId"] as? String,
+                  json["bIsIncompleteInstall"] as? Bool != true else { return nil }
+            // Add-ons have manifests of their own, naming the game they belong to.
+            if let main = json["MainGameAppName"] as? String, !main.isEmpty, main != app { return nil }
+            self.name = name
+            installFolder = location
+            let launch = (json["LaunchExecutable"] as? String)?.replacingOccurrences(of: "\\", with: "/")
+            executable = launch.flatMap { $0.isEmpty || $0.contains(":") || $0.split(separator: "/").contains("..") ? nil : $0 }
+            let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_."))
+            func encoded(_ part: String) -> String { part.addingPercentEncoding(withAllowedCharacters: allowed) ?? part }
+            launchURI = "com.epicgames.launcher://apps/\(encoded(namespace))%3A\(encoded(item))%3A\(encoded(app))?action=launch&silent=true"
+        }
+    }
+
+    /// GOG games, installed by GOG Galaxy or GOG's offline installers, from their goggame-*.info
+    /// records. They are DRM-free and start directly.
+    public static func gogGames(drive: URL) -> [DetectedProgram] {
+        var found: [DetectedProgram] = []
+        for root in Launcher.gog.gameFolders {
+            for folder in (try? FileManager.default.contentsOfDirectory(at: drive.appendingPathComponent(root), includingPropertiesForKeys: nil)) ?? [] {
+                let records = ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).filter { $0.lowercased().hasPrefix("goggame-") && $0.lowercased().hasSuffix(".info") }
+                guard let record = records.sorted().lazy.compactMap({ (try? Data(contentsOf: folder.appendingPathComponent($0))).flatMap(GOGRecord.init) }).first,
+                      FileManager.default.fileExists(atPath: folder.appendingPathComponent(record.executable).path),
+                      let relative = try? BottlePaths.relative(folder.appendingPathComponent(record.executable), drive: drive) else { continue }
+                var program = DetectedProgram(name: record.name, executable: relative, arguments: record.arguments, source: .gog)
+                program.reliable = true
+                found.append(program)
+            }
+        }
+        return found
+    }
+
+    struct GOGRecord {
+        var name: String, executable: String, arguments: [String]
+        init?(_ data: Data) {
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let name = json["name"] as? String,
+                  let tasks = json["playTasks"] as? [[String: Any]] else { return nil }
+            let files = tasks.filter { ($0["type"] as? String ?? "FileTask") == "FileTask" && $0["path"] is String }
+            guard let task = files.first(where: { $0["isPrimary"] as? Bool == true }) ?? files.first,
+                  let path = (task["path"] as? String)?.replacingOccurrences(of: "\\", with: "/"),
+                  path.lowercased().hasSuffix(".exe"), !path.contains(":"), !path.split(separator: "/").contains("..") else { return nil }
+            self.name = name
+            executable = path
+            arguments = (task["arguments"] as? String).map(ProgramScanner.splitCommandLine) ?? []
+        }
+    }
+
+    /// Games the Amazon Games app installed, from each game's fuel.json.
+    public static func amazonGames(drive: URL) -> [DetectedProgram] {
+        var found: [DetectedProgram] = []
+        for root in Launcher.amazon.gameFolders {
+            for folder in (try? FileManager.default.contentsOfDirectory(at: drive.appendingPathComponent(root), includingPropertiesForKeys: nil)) ?? [] {
+                guard let data = try? Data(contentsOf: folder.appendingPathComponent("fuel.json")),
+                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let main = json["Main"] as? [String: Any],
+                      let command = (main["Command"] as? String)?.replacingOccurrences(of: "\\", with: "/"),
+                      command.lowercased().hasSuffix(".exe"), !command.contains(":"), !command.split(separator: "/").contains(".."),
+                      FileManager.default.fileExists(atPath: folder.appendingPathComponent(command).path),
+                      let relative = try? BottlePaths.relative(folder.appendingPathComponent(command), drive: drive) else { continue }
+                var program = DetectedProgram(name: folder.lastPathComponent, executable: relative, arguments: main["Args"] as? [String] ?? [], source: .amazon)
+                program.reliable = true
+                found.append(program)
+            }
+        }
+        return found
+    }
+
+    /// Rockstar keeps no plain record of its games: each folder beside the launcher's own gets the
+    /// heuristic. Rockstar's games start the launcher themselves when they need it.
+    public static func rockstarGames(drive: URL) -> [DetectedProgram] {
+        var found: [DetectedProgram] = []
+        for root in Launcher.rockstar.gameFolders {
+            for folder in (try? FileManager.default.contentsOfDirectory(at: drive.appendingPathComponent(root), includingPropertiesForKeys: nil)) ?? []
+            where !["launcher", "social club"].contains(folder.lastPathComponent.lowercased()) {
+                guard let executable = mainExecutable(in: folder, name: folder.lastPathComponent),
+                      let relative = try? BottlePaths.relative(executable, drive: drive) else { continue }
+                found.append(DetectedProgram(name: folder.lastPathComponent, executable: relative, source: .rockstar))
             }
         }
         return found

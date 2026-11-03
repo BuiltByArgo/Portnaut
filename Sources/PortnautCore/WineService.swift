@@ -93,7 +93,7 @@ public final class WineService: @unchecked Sendable {
 
     // MARK: - Runtime
 
-    private func download(_ url: URL, to destination: URL) async throws {
+    func download(_ url: URL, to destination: URL) async throws {
         var request = URLRequest(url: url)
         request.timeoutInterval = 600
         let config = URLSessionConfiguration.ephemeral
@@ -380,11 +380,13 @@ public final class WineService: @unchecked Sendable {
 
     // MARK: - Bottles
 
-    public func createBottle(name: String, launcher: Launcher?, renderer: Renderer, windowsVersion: WindowsVersion = .win10) async throws -> Bottle {
+    public func createBottle(name: String, launcher: Launcher?, renderer: Renderer, windowsVersion: WindowsVersion = .win10, easyMode: Bool = true) async throws -> Bottle {
         guard paths.runtimeReady else { throw PortnautError("Prepare Portnaut first.") }
         var library = try paths.loadLibrary()
         var bottle = Bottle(id: library.newBottleID(for: name), name: name, launcher: launcher, renderer: renderer)
         bottle.windowsVersion = windowsVersion
+        bottle.easyMode = easyMode
+        bottle.autoBackupSaves = easyMode
         bottle.createdAt = Date()
         do { try await prepareBottle(bottle) }
         catch {
@@ -485,6 +487,9 @@ public final class WineService: @unchecked Sendable {
 
         """ + controllerRegistry(bottle.controllers) + componentRegistry(bottle) + gameRegistry(bottle.games)
             + (bottle.launcher?.registry ?? "")
+            // Rockstar's games open the Rockstar Games Launcher from any store (GTA V and Red Dead
+            // Redemption 2 bought on Steam or Epic too), so its Social Club window needs its fix everywhere.
+            + (bottle.launcher == .rockstar ? "" : Launcher.rockstar.registry)
     }
     /// Wine's controller driver reads these when a session starts.
     static func controllerRegistry(_ settings: ControllerSettings) -> String {
@@ -542,7 +547,9 @@ public final class WineService: @unchecked Sendable {
         try await download(launcher.installer, to: target)
         let file = try FileHandle(forReadingFrom: target)
         defer { try? file.close() }
-        guard try file.read(upToCount: 2) == Data([0x4d, 0x5a]) else {
+        // A Windows program starts with "MZ"; a Windows Installer package is a compound file.
+        let header = launcher.installerIsPackage ? Data([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]) : Data([0x4d, 0x5a])
+        guard try file.read(upToCount: header.count) == header else {
             try? FileManager.default.removeItem(at: target)
             throw PortnautError("\(launcher.title) returned an unexpected installer. Retry the download.")
         }
@@ -554,11 +561,21 @@ public final class WineService: @unchecked Sendable {
     /// own ways (the EA app's exits with 768), so the check is whether the launcher is there afterwards.
     public func launchInstaller(_ bottle: Bottle) async throws {
         guard let launcher = bottle.launcher else { throw PortnautError("\(bottle.name) has no launcher to install.") }
-        let installer = paths.bottle(bottle).drive.appendingPathComponent("Portnaut/\(launcher.installerName)")
-        let status = try await run(installer, in: bottle, arguments: launcher.installerArguments)
+        let drive = paths.bottle(bottle).drive
+        let installer = drive.appendingPathComponent("Portnaut/\(launcher.installerName)")
+        // Galaxy's installer starts Galaxy when it finishes.
+        try prepare(launcher, in: bottle)
+        let status = launcher.installerIsPackage
+            ? try await run(drive.appendingPathComponent("windows/system32/msiexec.exe"), in: bottle,
+                            arguments: ["/i", try paths.bottle(bottle).windowsPath(installer)] + launcher.installerArguments)
+            : try await run(installer, in: bottle, arguments: launcher.installerArguments)
         guard launcherInstalled(bottle) else {
             throw PortnautError("\(launcher.title) was not installed (its installer exited with code \(status)). Open Diagnostics to inspect session.log, then retry.")
         }
+        // Galaxy's installer starts Galaxy, but under Wine its web installer passes no campaign data
+        // and that first start stops on the missing "campaignParamsForLogIn" setting. The next start
+        // works (tested), so Portnaut makes it.
+        if launcher == .gog { try await launchLauncher(bottle) }
     }
 
     public func launcherInstalled(_ bottle: Bottle) -> Bool {
@@ -589,7 +606,50 @@ public final class WineService: @unchecked Sendable {
         }
         // Launchers restart themselves after updating (Steam's first process exits with 42), so
         // their exit code says nothing about the session.
+        try prepare(launcher, in: bottle)
         try await run(executable, in: bottle, arguments: launcher.arguments)
+    }
+    /// What the compatibility database knows about a game: a Steam game by its app id, others by name.
+    public func compatibilityReport(for game: Game, in bottle: Bottle, database: CompatibilityDatabase?) -> CompatibilityReport? {
+        // Games Portnaut itself has tested come first.
+        if let known = KnownGame.all.first(where: { $0.id == game.id || $0.executable.caseInsensitiveCompare(game.programName) == .orderedSame }) {
+            return CompatibilityReport(id: known.id, title: known.title, status: .tested, renderer: known.recommendation.renderer, notes: known.recommendation.reason)
+        }
+        guard let database else { return nil }
+        let steamID = bottle.launcher == .steam ? game.launcherArguments.flatMap { arguments in
+            arguments.firstIndex(of: "-applaunch").flatMap { arguments.indices.contains($0 + 1) ? Int(arguments[$0 + 1]) : nil }
+        } : nil
+        return database.report(steamAppID: steamID, title: game.name)
+    }
+
+    /// The renderer an easy-mode bottle switches to for a game: the one measured fastest on this Mac,
+    /// else the one it was tested or reported on with a Mac, else the one its files suggest; always
+    /// one the bottle's launcher starts on.
+    public func easyModeChoice(for game: Game, in bottle: Bottle, report: CompatibilityReport?) -> Recommendation? {
+        if let best = game.bestSetup, bottle.launcher?.unsupportedRenderers.contains(best.renderer) != true {
+            return Recommendation(renderer: best.renderer, reason: "Measured fastest on this Mac on \(best.measuredAt.formatted(date: .abbreviated, time: .omitted)). \(best.reason)")
+        }
+        if let report, let tested = report.renderer, report.status >= .reported, bottle.launcher?.unsupportedRenderers.contains(tested) != true {
+            return Recommendation(renderer: tested, reason: "\(report.status == .tested ? "Tested" : "Reported working") on \(tested.title) on Apple silicon, in Highball’s compatibility database.")
+        }
+        return analyze(game, in: bottle)?.recommendation
+    }
+
+    /// Fixes kept in a launcher's own files, applied while the launcher is not running.
+    func prepare(_ launcher: Launcher, in bottle: Bottle) throws {
+        guard launcher == .gog else { return }
+        let drive = paths.bottle(bottle).drive
+        let settings = drive.appendingPathComponent(Launcher.galaxySettings)
+        if let merged = Launcher.galaxySettings(merging: try? Data(contentsOf: settings)) {
+            try FileManager.default.createDirectory(at: settings.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try merged.write(to: settings, options: .atomic)
+        }
+        // A stopped session leaves Galaxy's lock file behind. Galaxy asks its service to remove stale
+        // ones but checks before it has, takes itself for a second copy and quits (tested).
+        let locks = drive.appendingPathComponent(Launcher.galaxyLockFiles)
+        for file in (try? FileManager.default.contentsOfDirectory(at: locks, includingPropertiesForKeys: nil)) ?? [] where file.pathExtension == "lock" {
+            try? FileManager.default.removeItem(at: file)
+        }
     }
     /// The program and arguments that start a game: its launcher for a game the launcher must start,
     /// otherwise the game's own executable.
@@ -605,7 +665,30 @@ public final class WineService: @unchecked Sendable {
         return (executable, game.arguments)
     }
     /// `waitForSession` false hands a launcher-started game to the launcher already running, and returns.
-    public func launchGame(_ game: Game, in bottle: Bottle, waitForSession: Bool = true) async throws {
+    /// Otherwise an easy-mode bottle first switches to the game's renderer, and the saves are backed
+    /// up when the bottle asks for it.
+    public func launchGame(_ game: Game, in bottle: Bottle, waitForSession: Bool = true, compatibility: CompatibilityDatabase? = nil) async throws {
+        var bottle = bottle
+        var game = game
+        if waitForSession {
+            bottle = try self.bottle(bottle.id)
+            game = bottle.games.first { $0.id == game.id } ?? game
+            // A best-setup round plays on its renderer, recorded; otherwise easy mode chooses.
+            let target: Renderer?
+            if let round = game.setupTrial?.next {
+                target = round
+            } else if bottle.easyMode {
+                target = easyModeChoice(for: game, in: bottle, report: compatibilityReport(for: game, in: bottle, database: compatibility ?? compatibilityDatabase()))?.renderer
+            } else {
+                target = nil
+            }
+            if let target { bottle.renderer = target }
+            if bottle != (try self.bottle(bottle.id)) { try await update(bottle) }
+            // A round is recorded even when the bottle's recording is off, without changing that setting.
+            if game.setupTrial?.next != nil { bottle.options.recordPerformance = true }
+            // A bottle without save folders yet has nothing to back up.
+            if bottle.autoBackupSaves { _ = try? await backUpSaves(of: bottle, automatic: true) }
+        }
         let command = try launchCommand(for: game, in: bottle)
         var updated = try self.bottle(bottle.id)
         if let index = updated.games.firstIndex(where: { $0.id == game.id }) { updated.games[index].lastPlayedAt = Date() }
@@ -619,10 +702,10 @@ public final class WineService: @unchecked Sendable {
                 try await launch(command.executable, in: bottle, arguments: command.arguments, game: game, waitForSession: waitForSession)
             }
         } catch {
-            if let start { recordPerformance(of: game, in: bottle, since: start) }
+            if let start { recordSetupRound(recordPerformance(of: game, in: bottle, since: start), of: game, in: bottle) }
             throw error
         }
-        if let start { recordPerformance(of: game, in: bottle, since: start) }
+        if let start { recordSetupRound(recordPerformance(of: game, in: bottle, since: start), of: game, in: bottle) }
     }
 
     func logSize() -> UInt64 { ((try? FileManager.default.attributesOfItem(atPath: paths.sessionLog.path))?[.size] as? NSNumber)?.uint64Value ?? 0 }
@@ -672,6 +755,10 @@ public final class WineService: @unchecked Sendable {
             var game = Game(id: id, name: program.name, executable: program.executable)
             game.arguments = program.arguments
             game.launcherArguments = program.launcherArguments
+            if game.arguments.isEmpty, let launch = program.launcherArguments, launch.first == "-applaunch", launch.count > 1,
+               let options = KnownGame.steamLaunchOptions[launch[1]] {
+                game.arguments = options
+            }
             game.addedAt = Date()
             updated.games.append(game)
             games.append(game)
@@ -849,8 +936,11 @@ public final class WineService: @unchecked Sendable {
         return try addGame(destination.appendingPathComponent(KnownGame.ac3.executable), to: bottle)
     }
 
+    /// The game's analysis, with a recommendation its bottle's launcher can start on.
     public func analyze(_ game: Game, in bottle: Bottle) -> GraphicsAnalysis? {
-        paths.bottle(bottle).url(for: game.executable).map(GraphicsAdvisor.analyze)
+        guard var analysis = paths.bottle(bottle).url(for: game.executable).map(GraphicsAdvisor.analyze) else { return nil }
+        if let launcher = bottle.launcher { analysis.recommendation = launcher.adjusted(analysis.recommendation) }
+        return analysis
     }
     public func recommendation(for bottle: Bottle) -> Recommendation {
         GraphicsAdvisor.recommendation(for: bottle, analyses: bottle.games.compactMap { analyze($0, in: bottle) })

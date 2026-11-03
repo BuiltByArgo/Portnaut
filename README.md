@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <img alt="Version 0.8.0" src="https://img.shields.io/badge/version-0.8.0-FF8A3D">
+  <img alt="Version 0.12.0" src="https://img.shields.io/badge/version-0.12.0-FF8A3D">
   <img alt="macOS 14.6 or later" src="https://img.shields.io/badge/macOS-14.6%2B-141B3A">
   <img alt="Apple silicon" src="https://img.shields.io/badge/Apple%20silicon-M1%20or%20later-141B3A">
   <img alt="Free, MIT licence" src="https://img.shields.io/badge/licence-MIT-141B3A">
 </p>
 
 <p align="center">
-  <a href="https://github.com/BuiltByArgo/Portnaut/releases/latest"><img alt="Download Portnaut 0.8.0" src="https://img.shields.io/badge/Download%20Portnaut-0.8.0-FF8A3D?style=for-the-badge"></a>
+  <a href="https://github.com/BuiltByArgo/Portnaut/releases/latest"><img alt="Download Portnaut 0.12.0" src="https://img.shields.io/badge/Download%20Portnaut-0.12.0-FF8A3D?style=for-the-badge"></a>
   <a href="https://ko-fi.com/A2H229BWWV"><img alt="Support Portnaut on Ko-fi" src="https://img.shields.io/badge/Support%20Portnaut-Ko--fi-72A4F2?style=for-the-badge&logo=kofi&logoColor=white"></a>
   <a href="https://portnaut.com"><img alt="Portnaut's website" src="https://img.shields.io/badge/Website-portnaut.com-141B3A?style=for-the-badge"></a>
 </p>
@@ -28,19 +28,44 @@
 
 Portnaut keeps each game launcher or game in its own **bottle**, a separate Windows environment, and
 runs it with Wine and a graphics translator that turns Direct3D into Apple's Metal. It looks at every
-game you add and recommends the translator that suits it. Early access.
+game you add and recommends the translator that suits it. In easy mode it sets each game up for you:
+install a game and play. Early access.
 
 ## Features
 
 ### A bottle for every launcher
 
-Steam, the EA app and Ubisoft Connect install in a few clicks, from their publishers' own
-installers, or run any Windows installer you choose. Each bottle picks its renderer: **DXMT**,
+Steam, the EA app, Ubisoft Connect, the Epic Games Launcher, Battle.net, the Rockstar Games
+Launcher, GOG Galaxy and Amazon Games install in a few clicks, from their publishers' own installers,
+or run any Windows installer you choose. Each bottle picks its renderer: **DXMT**,
 **D3DMetal**, **DXVK** or Wine's own. Portnaut tells you which one a game should use and why.
 
 <p align="center">
   <img src="docs/screenshots/bottles.png" width="880" alt="A bottle's settings: renderer choice with a recommendation, MetalFX and DLSS">
 </p>
+
+### Easy mode: install a game and play
+
+New bottles start in easy mode. When you press Play, Portnaut switches the bottle to the renderer that
+suits the game (the one measured fastest on your Mac, else the one it was tested on, else the one its
+files suggest) and backs up your saves first. Advanced settings stay one click away.
+
+### Will It Run?
+
+Check a game before you buy or download it: about 13,000 games with Mac reports, anti-cheat and Linux
+players' results, from Highball's open compatibility database. Every game in your library shows its
+verdict, and Portnaut warns you when Steam starts downloading a game that can't run, before the
+download finishes. The check happens on your Mac; nothing about what you play is sent anywhere.
+
+### Find My Best Setup
+
+Portnaut plays a game once on each renderer it can use, measures every round on your Mac, and keeps
+the fastest. Easy mode then starts the game there.
+
+### Couch Mode
+
+Your library, full screen on a TV, driven by a controller: choose with the D-pad, A to play, B to
+leave. Portnaut comes back to the front when the game closes.
 
 ### Settings for each game
 
@@ -53,8 +78,8 @@ environment variables.
 
 ### Snapshots and save backups
 
-Portnaut snapshots a whole bottle before every risky change, so it can always go back. On request,
-it also copies your game saves to your Documents folder.
+Portnaut snapshots a whole bottle before every risky change, so it can always go back. It can also
+back up your game saves to your Documents folder before every game, keeping the ten newest copies.
 
 <p align="center">
   <img src="docs/screenshots/snapshots.png" width="880" alt="A bottle's snapshots and save backups">
@@ -70,8 +95,8 @@ Wine and the renderers update from inside the app, with a snapshot first and a w
 
 ### And also
 
-- **Games appear by themselves:** Steam and EA app games join the library as they install;
-  **Find Programs** lists anything else.
+- **Games appear by themselves:** games from Steam, the EA app, the Epic Games Launcher, GOG and
+  Amazon Games join the library as they install; **Find Programs** lists anything else.
 - **Controllers:** recognised through SDL (Xbox, PlayStation, Switch and most others) and shown to
   games as Xbox controllers, with a test panel.
 - **Windows components:** Visual C++ runtimes, .NET Desktop Runtime 8 and the DirectX 9–11 helper
@@ -101,8 +126,8 @@ Tested most with Assassin's Creed III Remastered through Ubisoft Connect: missio
    After that it opens normally.
 3. **Choose Prepare Portnaut.** It downloads Wine and the renderers once (a few hundred MB), checks
    them, and sets them up in `~/Library/Application Support/Portnaut`.
-4. **Bottles › New Bottle…**: pick Steam, the EA app, Ubisoft Connect or an empty bottle. Install the
-   launcher, sign in, and install a game.
+4. **Bottles › New Bottle…**: pick a launcher or an empty bottle. Install the launcher, sign in, and
+   install a game.
 
 Step-by-step guides for Steam, the EA app and Ubisoft Connect, a comparison of the renderers, and
 answers to common questions are on **[portnaut.com](https://portnaut.com)**.
@@ -118,8 +143,9 @@ Portnaut itself contains only its own code. When you ask it to, it downloads:
 | --- | --- | --- |
 | Wine 11, DXMT and MoltenVK | Highball's public releases on GitHub (Wine built from the sources CodeWeavers publishes) | LGPL, Apache-2.0 |
 | D3DMetal, DXVK, GStreamer, SDL and support libraries | The Sikarugir project's public template on GitHub | Apple's Game Porting Toolkit licence for D3DMetal; open-source licences for the rest |
-| Steam, the EA app, Ubisoft Connect | Valve, Electronic Arts and Ubisoft | Their own terms, which their installers show |
+| Game launchers (Steam, the EA app, Ubisoft Connect, the Epic Games Launcher, Battle.net, the Rockstar Games Launcher, GOG Galaxy, Amazon Games) | Their publishers: Valve, Electronic Arts, Ubisoft, Epic Games, Blizzard, Rockstar Games, GOG and Amazon | Their own terms, which their installers show |
 | Visual C++, .NET and DirectX components | Microsoft | Microsoft's terms; Portnaut asks you to accept them first |
+| The compatibility list behind Will It Run? (a copy ships in the app) | Highball's public database: [highball-db](https://github.com/gauthierpiarrette/highball-db) | CC0; predictions from ProtonDB's Linux reports under the ODbL; the anti-cheat list from Are We Anti-Cheat Yet? under MIT |
 
 Every runtime download is checked against a published SHA-256 checksum before it's installed. Full
 details are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
@@ -132,16 +158,25 @@ installs it unmodified.
 
 No account, no analytics, no tracking. Portnaut connects to the internet only:
 - for the downloads above
-- when you open Component Updates, to ask GitHub what's new
+- when you open Component Updates, to ask GitHub what's new and to fetch the newest compatibility list
+
+Will It Run? and every game's verdict are worked out on your Mac from that list: Portnaut never sends
+what you search for or play.
 
 Its logs stay on your Mac. A diagnostics report is a file you choose to save and send.
 
 ## Good to know
 
-- Games with kernel-level anti-cheat (for example EA Sports FC and Battlefield) don't run under Wine,
-  in Portnaut or anywhere else. Some online games may not allow Wine in their terms.
+- Games with kernel-level anti-cheat (for example EA Sports FC, Battlefield, Fortnite, Call of Duty
+  and GTA Online) don't run under Wine, in Portnaut or anywhere else. Some online games may not allow
+  Wine in their terms.
 - DirectX 12 games need the D3DMetal renderer.
-- Steam's own window is drawn in software; games are not.
+- The Rockstar Games Launcher doesn't start on D3DMetal, so Rockstar bottles use DXMT or DXVK. In Red
+  Dead Redemption 2, choose Vulkan in its graphics settings.
+- The windows of Steam, Battle.net, Rockstar's Social Club, GOG Galaxy and Amazon Games are drawn in
+  software; games are not.
+- New and not yet tried with real games: Find My Best Setup's rounds, and Couch Mode with a controller.
+  Reports are welcome.
 - Portnaut is early access: expect rough edges, and keep backups of saves you care about.
 
 ## Build from source
@@ -157,7 +192,8 @@ open build/Portnaut.app
 ```
 
 `bash scripts/package-release.sh` builds the app and writes `Portnaut-<version>.zip` and its SHA-256
-to `release-assets/`.
+to `release-assets/`. `bash scripts/update-compatibility.sh` refreshes the compatibility list in
+`Compatibility/`, which the build copies into the app.
 
 | Folder | What's in it |
 | --- | --- |
@@ -167,6 +203,7 @@ to `release-assets/`.
 | `Shims` | A small Metal shim loaded into games |
 | `Tests` | The test suite |
 | `Icon` | The app icon, drawn into every size by `scripts/make-icon.swift` |
+| `Compatibility` | Highball's compatibility list and its licences, shipped in the app |
 
 ## Support
 
@@ -181,5 +218,6 @@ repository holds its full source code. The components it downloads keep their ow
 ([THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
 <sub>Portnaut is an independent project, not affiliated with or endorsed by Apple, Valve, Electronic
-Arts, Ubisoft, Microsoft, CodeWeavers, Highball or Sikarugir. Steam, EA, Ubisoft Connect, Assassin's
-Creed, Apple, Mac, Metal and MetalFX are trademarks of their owners.</sub>
+Arts, Ubisoft, Epic Games, Blizzard Entertainment, Rockstar Games, GOG, Amazon, Microsoft, CodeWeavers,
+Highball or Sikarugir. Steam, EA, Ubisoft Connect, Epic Games, Battle.net, Rockstar Games, GOG GALAXY,
+Amazon Games, Assassin's Creed, Apple, Mac, Metal and MetalFX are trademarks of their owners.</sub>

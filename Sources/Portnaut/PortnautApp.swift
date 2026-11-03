@@ -18,6 +18,10 @@ struct PortnautApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("New Bottle…") { model.showingNewBottle = true }.keyboardShortcut("n").disabled(!model.runtimeReady)
                 Button("Install from File…") { model.chooseInstaller() }.keyboardShortcut("i").disabled(!model.runtimeReady || model.busy)
+                Divider()
+                Button("Will It Run?…") { model.showingWillItRun = true }.keyboardShortcut("k")
+                Button(model.couchMode ? "Leave Couch Mode" : "Couch Mode") { model.couchMode ? model.exitCouchMode() : model.enterCouchMode() }
+                    .keyboardShortcut("t", modifiers: [.command, .shift])
             }
             CommandGroup(after: .appInfo) {
                 Button("Check for Component Updates…") { model.openComponentUpdates() }.disabled(!model.runtimeReady)
@@ -45,6 +49,14 @@ struct PortnautView: View {
                     if model.page == .bottles, let bottle = model.selectedBottle { crumb(bottle.name) }
                     if model.page == .library, let entry = model.selectedEntry { crumb(entry.game.name) }
                     Spacer()
+                    if model.page == .library {
+                        if !model.entries.isEmpty {
+                            Button { model.enterCouchMode() } label: { Label("Couch Mode", systemImage: "tv").frame(height: 28) }
+                                .buttonStyle(PortnautButtonStyle(primary: false)).padding(.trailing, 8).help("The library full screen, for a controller (⇧⌘T)")
+                        }
+                        Button { model.showingWillItRun = true } label: { Label("Will It Run?", systemImage: "magnifyingglass").frame(height: 28) }
+                            .buttonStyle(PortnautButtonStyle(primary: false)).padding(.trailing, 8)
+                    }
                     if model.runtimeReady, model.page == .library || model.page == .bottles {
                         Button { model.chooseInstaller() } label: { Label("Install from File…", systemImage: "square.and.arrow.down.on.square").frame(height: 28) }
                             .buttonStyle(PortnautButtonStyle(primary: false)).disabled(model.busy).padding(.trailing, 14)
@@ -73,12 +85,18 @@ struct PortnautView: View {
             }
         }
         .background(Palette.background)
+        // Couch mode covers the whole window, sidebar included.
+        .overlay { if model.couchMode { CouchView() } }
         .tint(Palette.accent)
         .alert("Portnaut needs attention", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("Open Diagnostics") { model.page = .diagnostics; model.readLog(); model.error = nil }
             Button("OK", role: .cancel) { model.error = nil }
         } message: { Text(model.error ?? "") }
         .sheet(isPresented: $model.showingNewBottle) { NewBottleSheet().environmentObject(model) }
+        .background(EmptyView().sheet(isPresented: $model.showingWillItRun) { WillItRunSheet().environmentObject(model) })
+        .alert("This game won’t run", isPresented: Binding(get: { model.downloadWarning != nil }, set: { if !$0 { model.downloadWarning = nil } })) {
+            Button("OK", role: .cancel) { model.downloadWarning = nil }
+        } message: { Text(model.downloadWarning ?? "") }
         // One sheet per view: the install and program sheets hang off their own empty views.
         .background(EmptyView().sheet(item: $model.pendingInstall) { InstallSheet(install: $0, defaultBottle: model.page == .bottles ? model.selectedBottle?.id : nil).environmentObject(model) })
         .background(EmptyView().sheet(item: $model.programChoice) { choice in

@@ -11,10 +11,33 @@ struct PerformanceCard: View {
         let rows = PerformanceLog.compare(entry.game.performance)
         let bottle = entry.bottle
         let tried = Set(rows.map(\.renderer))
-        let untried = model.analyses[entry.id].map(GraphicsAdvisor.candidates)?.filter { !tried.contains($0) } ?? []
+        // Renderers the bottle's launcher does not start on are left out (DXVK for Ubisoft Connect).
+        let untried = model.analyses[entry.id].map(GraphicsAdvisor.candidates)?.filter { !tried.contains($0) && bottle.launcher?.unsupportedRenderers.contains($0) != true } ?? []
         let best = rows.first?.configuration
+        let candidates = model.analyses[entry.id].map { SetupTrial.candidates(for: $0, launcher: bottle.launcher) } ?? []
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(title: "Performance", symbol: "chart.bar.xaxis")
+            if let best = entry.game.bestSetup {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "gauge.with.dots.needle.67percent").foregroundStyle(Palette.cyan)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Fastest on this Mac: \(best.renderer.title)").font(.system(size: 12, weight: .semibold))
+                        Text("\(best.reason) Measured \(best.measuredAt.formatted(date: .abbreviated, time: .omitted)).").font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+            if entry.game.setupTrial == nil, candidates.count >= 2 {
+                HStack(spacing: 10) {
+                    Text(entry.game.bestSetup == nil
+                         ? "Not sure which renderer is fastest? Portnaut can play \(entry.game.name) on \(CompatibilityReport.list(candidates.map(\.title))) in turn and keep the fastest."
+                         : "Measure again after a component update, or when a game update changes how it runs.")
+                        .font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Button { model.startBestSetup(entry) } label: { Label(entry.game.bestSetup == nil ? "Find My Best Setup" : "Measure Again", systemImage: "gauge.with.dots.needle.67percent").frame(height: 28) }
+                        .buttonStyle(PortnautButtonStyle(primary: entry.game.bestSetup == nil)).disabled(model.busy)
+                }
+            }
             if rows.isEmpty {
                 Text(bottle.options.recordPerformance
                      ? "Portnaut records each session you start here: average and low frame rate, GPU time per frame, and the delay to the screen. Play a while on one renderer, then another, to compare them."
@@ -45,7 +68,8 @@ struct PerformanceCard: View {
                 Text("Low is the slowest 5% of 5-second stretches. GPU time can pass the frame budget when frames overlap. Paused or background stretches are left out.")
                     .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
             }
-            if !untried.isEmpty {
+            // Find My Best Setup covers trying the others when there are two or more.
+            if !untried.isEmpty, candidates.count < 2 {
                 HStack(spacing: 8) {
                     Text("Not tried yet:").font(.system(size: 12)).foregroundStyle(Palette.muted)
                     ForEach(untried) { renderer in
@@ -54,7 +78,7 @@ struct PerformanceCard: View {
                     }
                 }
                 Text(bottle.launcher == .ubisoft
-                     ? "The renderer applies to the whole bottle. Ubisoft Connect is 32-bit and stays on Wine’s own Direct3D with DXMT or D3DMetal, so sign-in is unaffected; avoid DXVK in this bottle."
+                     ? "The renderer applies to the whole bottle. Ubisoft Connect is 32-bit and stays on Wine’s own Direct3D with DXMT or D3DMetal, so sign-in is unaffected."
                      : "The renderer applies to the whole bottle and takes effect at its next session.")
                     .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
             }
@@ -109,7 +133,7 @@ struct SnapshotsCard: View {
                 ForEach(backups.prefix(5)) { backup in
                     HStack(spacing: 10) {
                         Image(systemName: "externaldrive").foregroundStyle(Palette.muted).frame(width: 18)
-                        Text("\(backup.date.formatted(date: .abbreviated, time: .shortened)) · \(backup.files) files · \(ByteCountFormatter.string(fromByteCount: backup.bytes, countStyle: .file))")
+                        Text("\(backup.date.formatted(date: .abbreviated, time: .shortened)) · \(backup.files) files · \(ByteCountFormatter.string(fromByteCount: backup.bytes, countStyle: .file))\(backup.automatic == true ? " · before a game" : "")")
                             .font(.system(size: 12))
                         Spacer()
                         ConfirmingButton(title: "Restore…", prompt: "Restore saves from \(backup.date.formatted(date: .abbreviated, time: .shortened))?",
@@ -158,5 +182,75 @@ enum MainDisplay {
         guard let screen = NSScreen.main else { return ("the Mac’s point resolution", "full Retina resolution") }
         let size = screen.frame.size, scale = screen.backingScaleFactor
         return ("\(Int(size.width)) × \(Int(size.height))", "\(Int(size.width * scale)) × \(Int(size.height * scale))")
+    }
+}
+
+
+/// "Find my best setup" while its rounds are played, and its result before it is kept.
+struct BestSetupCard: View {
+    @EnvironmentObject var model: AppModel
+    var entry: LibraryEntry
+    var trial: SetupTrial
+
+    var body: some View {
+        let running = model.sessionActive(entry.bottle)
+        VStack(alignment: .leading, spacing: 12) {
+            SectionTitle(title: "Find my best setup", symbol: "gauge.with.dots.needle.67percent")
+            HStack(spacing: 8) {
+                ForEach(Array(trial.renderers.enumerated()), id: \.offset) { index, renderer in
+                    let done = trial.runs.contains { $0.renderer == renderer }
+                    Tag(text: "\(index + 1). \(renderer.title)\(done ? " ✓" : "")", tint: done ? Palette.cyan : renderer == trial.next ? Palette.accent : .white)
+                }
+            }
+            if let winner = trial.winner, trial.finished {
+                ForEach(trial.runs) { run in
+                    HStack(spacing: 14) {
+                        Text(run.renderer.title).font(.system(size: 12, weight: .medium)).frame(width: 110, alignment: .leading)
+                        Text(String(format: "%.0f fps average", run.averageFPS)).font(.system(size: 12, design: .monospaced))
+                        Text(String(format: "%.0f fps low", run.lowFPS)).font(.system(size: 12, design: .monospaced))
+                        Text(String(format: "%.1f ms GPU", run.gpuMilliseconds)).font(.system(size: 12, design: .monospaced))
+                        if run.renderer == winner.renderer { Tag(text: "Fastest", tint: Palette.cyan) }
+                    }
+                }
+                Text(winner.reason).font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 10) {
+                    Button { model.keepBestSetup(entry) } label: { Label("Keep \(winner.renderer.title)", systemImage: "checkmark").frame(height: 30) }
+                        .buttonStyle(PortnautButtonStyle(primary: true)).disabled(model.busy || running)
+                    Button("Discard") { model.cancelBestSetup(entry) }.buttonStyle(PortnautButtonStyle(primary: false)).frame(height: 30)
+                    Text(entry.bottle.easyMode ? "Easy mode then starts \(entry.game.name) on \(winner.renderer.title)." : "\(entry.bottle.name) then switches to \(winner.renderer.title).")
+                        .font(.system(size: 11)).foregroundStyle(Palette.muted)
+                }
+            } else if let next = trial.next {
+                if running, !model.roundSessions.contains(entry.bottle.id) {
+                    Text("\(entry.bottle.launcher?.title ?? entry.bottle.name) is open from before. A round starts the session itself, so Portnaut can switch to \(next.title) and record it: close it first, or stop the session.")
+                        .font(.system(size: 12)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true)
+                    Button { model.stop(entry.bottle) } label: { Label("Stop Session", systemImage: "stop.fill").frame(height: 30) }
+                        .buttonStyle(PortnautButtonStyle(primary: false))
+                } else if running {
+                    Text("Round \(trial.round) of \(trial.renderers.count) is running on \(next.title). Play for at least a minute, two is better: the same kind of play each round, such as a ride or a fight you know. Then save and quit the game\(entry.game.launcherArguments != nil ? " and \(entry.bottle.launcher?.title ?? "its launcher")" : ""), or end the round here.")
+                        .font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 10) {
+                        Button { model.stop(entry.bottle) } label: { Label("End Round", systemImage: "stop.fill").frame(height: 30) }
+                            .buttonStyle(PortnautButtonStyle(primary: false))
+                        Text("Ending the round closes the game: save first.").font(.system(size: 11)).foregroundStyle(Palette.accent)
+                    }
+                } else {
+                    if trial.emptyRound == true {
+                        Text("The last round recorded almost no play (under 15 seconds): the game may have closed at once, or not reached play. Play it again, for at least a minute of play.")
+                            .font(.system(size: 12)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true)
+                    } else if let short = trial.shortRun {
+                        Text("The last round counted only \(short.seconds) seconds of play (loading and menus below 5 fps are left out). Play it again for at least a minute.")
+                            .font(.system(size: 12)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true)
+                    }
+                    Text("Round \(trial.round) of \(trial.renderers.count): \(next.title). Portnaut switches \(entry.bottle.name) to \(next.title) and records the session. Play the same kind of stretch in every round for a fair comparison.")
+                        .font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 10) {
+                        Button { model.play(entry) } label: { Label("Play Round \(trial.round) on \(next.title)", systemImage: "play.fill").frame(height: 30) }
+                            .buttonStyle(PortnautButtonStyle(primary: true)).disabled(!model.canPlay(entry))
+                        Button("Cancel") { model.cancelBestSetup(entry) }.buttonStyle(PortnautButtonStyle(primary: false)).frame(height: 30)
+                    }
+                }
+            }
+        }.card()
     }
 }

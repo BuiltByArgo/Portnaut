@@ -44,6 +44,12 @@ public struct KnownGame: Sendable {
         recommendation: Recommendation(renderer: .dxmt, reason: "Tested in Portnaut: plays through missions on DXMT at 60 fps. Portnaut’s Metal shim fixes its dual-source blending crash."),
         legacyBottleID: "ac3-remastered")
     public static let all = [ac3]
+
+    /// Launch options some games need under Wine, by Steam app id, added when the game joins the
+    /// library. GTA V Legacy: without -nobattleye a new launcher profile installs BattlEye, whose
+    /// kernel driver cannot run under Wine, and the story mode never starts (Highball's database,
+    /// played on a Mac). GTA Online needs BattlEye and does not run.
+    public static let steamLaunchOptions: [String: [String]] = ["271590": ["-nobattleye"]]
     public static func matching(_ executable: URL) -> KnownGame? {
         all.first { $0.executable.caseInsensitiveCompare(executable.lastPathComponent) == .orderedSame }
     }
@@ -164,7 +170,7 @@ public enum GraphicsAdvisor {
     /// For a bottle: the launcher's renderer if it has one, else what most of its games want.
     public static func recommendation(for bottle: Bottle, analyses: [GraphicsAnalysis]) -> Recommendation {
         if let launcher = bottle.launcher, analyses.isEmpty { return launcher.recommendation }
-        let wanted = analyses.map(\.recommendation)
+        let wanted = analyses.map { bottle.launcher?.adjusted($0.recommendation) ?? $0.recommendation }
         guard let first = wanted.first else {
             return Recommendation(renderer: .dxmt, reason: "Most current Windows games are 64-bit DirectX 11, which DXMT handles best. Add games to get a specific recommendation.")
         }

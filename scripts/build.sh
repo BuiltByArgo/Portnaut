@@ -18,6 +18,9 @@ clang -dynamiclib -arch x86_64 -arch arm64 -mmacosx-version-min=14.0 -O2 -fno-ob
   -framework Foundation -framework Metal "$project/Shims/PortnautMetalShim.m" -o "$app/Contents/Helpers/libPortnautMetalShim.dylib"
 cp "$project/THIRD-PARTY-NOTICES.md" "$app/Contents/Resources/THIRD-PARTY-NOTICES.md"
 cp "$project/LICENSE" "$app/Contents/Resources/LICENSE"
+# Highball's compatibility database with its licences; scripts/update-compatibility.sh refreshes it.
+rm -rf "$app/Contents/Resources/Compatibility"
+cp -R "$project/Compatibility" "$app/Contents/Resources/Compatibility"
 cp "$project/Info.plist" "$app/Contents/Info.plist"
 iconset="$build_dir/Portnaut.iconset"
 mkdir -p "$iconset"

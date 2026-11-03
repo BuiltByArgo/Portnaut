@@ -67,6 +67,7 @@ struct DiagnosticsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             PageHeading(title: "A clear view under the hood.", subtitle: "Local logs and environment checks.")
+                .onAppear { model.readLog() }
             HStack(spacing: 12) {
                 badge("Runtime", ready: model.runtimeReady)
                 ForEach(model.library.bottles) { badge($0.name, ready: model.ready($0)) }
@@ -79,7 +80,10 @@ struct DiagnosticsPage: View {
             }
             ScrollView([.vertical, .horizontal]) {
                 Text(model.logText).font(.system(size: 10, design: .monospaced)).foregroundStyle(Palette.muted).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(16)
-            }.frame(height: 380).background(Color.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 10))
+            }
+            // The newest lines, from their start; long lines scroll sideways.
+            .defaultScrollAnchor(.bottomLeading)
+            .frame(height: 380).background(Color.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 10))
             HStack(spacing: 12) {
                 Text("Logs stay on this Mac. For help, email \(Publisher.supportEmail) with an exported report attached; review it before you send it.")
                     .font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
@@ -106,13 +110,14 @@ struct AboutPage: View {
                     .font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
                 Link("Email Support ↗", destination: Publisher.supportMail).font(.system(size: 13))
             }.card(padding: 18)
-            Text("Built around Wine with DXMT, D3DMetal and DXVK renderers, with each launcher or game in a bottle of its own. Portnaut is free, open-source software under the MIT licence. It is an independent project, not affiliated with or endorsed by Apple, Ubisoft, Valve, Electronic Arts, CodeWeavers, Highball or Sikarugir.")
+            Text("Built around Wine with DXMT, D3DMetal and DXVK renderers, with each launcher or game in a bottle of its own. Portnaut is free, open-source software under the MIT licence. It is an independent project, not affiliated with or endorsed by Apple, Ubisoft, Valve, Electronic Arts, Epic Games, Blizzard Entertainment, Rockstar Games, GOG, Amazon, CodeWeavers, Highball or Sikarugir.")
                 .font(.system(size: 14)).foregroundStyle(Palette.muted).lineSpacing(5)
             VStack(alignment: .leading, spacing: 12) {
                 Link("Wine & the Highball runtime ↗", destination: URL(string: "https://github.com/gauthierpiarrette/highball-engine")!)
                 Link("DXMT graphics translation ↗", destination: URL(string: "https://github.com/3Shain/dxmt")!)
                 Link("DXVK for macOS ↗", destination: URL(string: "https://github.com/Gcenx/DXVK-macOS")!)
                 Link("Apple Game Porting Toolkit ↗", destination: URL(string: "https://developer.apple.com/games/game-porting-toolkit/")!)
+                Link("Compatibility data: Highball’s database ↗", destination: URL(string: "https://github.com/gauthierpiarrette/highball-db")!)
                 if let notices = Bundle.main.url(forResource: "THIRD-PARTY-NOTICES", withExtension: "md") {
                     Button("Component licenses & sources") { model.reveal(notices) }.buttonStyle(.link)
                 }

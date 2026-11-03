@@ -40,6 +40,12 @@ struct PortnautDoctor {
       controller-panel [bottle]               open Wine's Game Controllers panel
       game <bottle> <game> [version <v>|bottle] [dll <name> <mode>|remove] [env KEY=value|KEY=] [args "<line>"]
                                               per-game settings; mode: \(DllOverride.allCases.filter { $0 != .disabled }.map(\.rawValue).joined(separator: "|"))|disabled
+      will-it-run <game title…>               search the compatibility database (Highball's, with anti-cheat and Linux reports)
+      compat [bottle]                         what the database knows about each game, and easy mode's renderer for it
+      steam-downloads [bottle]                Steam downloads in progress, with their verdicts
+      easy [bottle] on|off | auto-backup [bottle] on|off   easy mode; save backups before every game
+      update-compatibility                    download the newest compatibility database into the data folder
+      best-setup <bottle> <game> start|status|cancel|keep   find my best setup; launch-game plays the current round
       stop [bottle]
     """
 
@@ -268,6 +274,65 @@ struct PortnautDoctor {
                 }
                 try await service.update(bottle)
                 print("\(bottle.name): frame limit \(bottle.options.frameRateLimit.map { "\($0) fps" } ?? "off"); HUD \(bottle.options.performanceHUD ? "on" : "off"); recording \(bottle.options.recordPerformance ? "on" : "off"); MetalFX \(bottle.metalFXActive ? "on" : "off"); DLSS \(bottle.dlssActive ? "on" : "off"); frame queue \(bottle.options.reduceFrameQueue ? "reduced" : "default")")
+            case "will-it-run":
+                guard !arguments.isEmpty, let database = service.compatibilityDatabase() else { throw PortnautError(usage) }
+                let results = database.search(arguments.joined(separator: " "), limit: 12)
+                if results.isEmpty { print("Not in the database: no reports yet.") }
+                for report in results {
+                    print("\(report.title)\(report.steamAppID.map { " (Steam \($0))" } ?? ""): \(report.headline). \(report.explanation)")
+                }
+            case "compat":
+                let database = service.compatibilityDatabase()
+                print("Database: \(database.map { "\($0.reports.count) games, generated \($0.generated)" } ?? "not found")")
+                for bottle in try targets(service, arguments) {
+                    print("Bottle \(bottle.id) — easy mode \(bottle.easyMode ? "on" : "off"), save backups before each game \(bottle.autoBackupSaves ? "on" : "off")")
+                    for game in bottle.games {
+                        let report = service.compatibilityReport(for: game, in: bottle, database: database)
+                        let choice = service.easyModeChoice(for: game, in: bottle, report: report)
+                        print("  \(game.name): \(report.map { "\($0.headline). \($0.explanation)" } ?? "not in the database"); easy mode starts it on \(choice?.renderer.title ?? "the bottle's renderer")")
+                    }
+                }
+            case "steam-downloads":
+                let database = service.compatibilityDatabase()
+                let bottle = try target(service, arguments)
+                let downloads = ProgramScanner.steamDownloads(drive: service.paths.bottle(bottle).drive)
+                if downloads.isEmpty { print("No Steam downloads in progress in \(bottle.name).") }
+                for download in downloads {
+                    let report = database?.report(steamAppID: download.appID, title: download.name)
+                    print("\(download.name) (\(download.appID)): \(report.map { "\($0.headline). \($0.explanation)" } ?? "not in the database")")
+                }
+            case "easy", "auto-backup":
+                guard let value = arguments.last, value == "on" || value == "off" else { throw PortnautError(usage) }
+                var bottle = try target(service, arguments.dropLast())
+                if command == "easy" { bottle.easyMode = value == "on" } else { bottle.autoBackupSaves = value == "on" }
+                try await service.update(bottle)
+                print("\(bottle.name): easy mode \(bottle.easyMode ? "on" : "off"); save backups before each game \(bottle.autoBackupSaves ? "on" : "off")")
+            case "best-setup":
+                guard arguments.count == 3 else { throw PortnautError(usage) }
+                let bottle = try service.bottle(arguments[0])
+                guard let game = bottle.games.first(where: { $0.id == arguments[1] }) else { throw PortnautError("No such game in \(bottle.name).") }
+                switch arguments[2] {
+                case "start": try service.startSetupTrial(for: game, in: bottle)
+                case "cancel": try service.cancelSetupTrial(for: game, in: bottle)
+                case "keep":
+                    let best = try await service.keepSetupTrial(for: game, in: bottle)
+                    print("Kept \(best.renderer.title): \(best.reason)")
+                case "status": break
+                default: throw PortnautError(usage)
+                }
+                let current = try service.bottle(bottle.id).games.first { $0.id == game.id }
+                if let trial = current?.setupTrial {
+                    print("Rounds: \(trial.renderers.map(\.title).joined(separator: ", ")); next: \(trial.next?.title ?? "none, every round is done")")
+                    for run in trial.runs { print(String(format: "  %@: %.0f fps average, %.0f low, %.1f ms GPU, %d s", run.renderer.title, run.averageFPS, run.lowFPS, run.gpuMilliseconds, run.seconds)) }
+                    if let short = trial.shortRun { print("  last round too short: \(short.seconds) s") }
+                    if trial.emptyRound == true { print("  last round recorded almost no play") }
+                    if let winner = trial.winner { print("Fastest: \(winner.renderer.title). \(winner.reason)") }
+                } else if let best = current?.bestSetup {
+                    print("Best setup: \(best.renderer.title), measured \(best.measuredAt.formatted()). \(best.reason)")
+                } else { print("No best setup yet.") }
+            case "update-compatibility":
+                try await service.refreshCompatibility()
+                print("Compatibility database: \(service.compatibilityDatabase().map { "\($0.reports.count) games, generated \($0.generated)" } ?? "not readable")")
             case "stop": try await service.stop(try target(service, arguments))
             default: throw PortnautError(usage)
             }
@@ -278,6 +343,11 @@ struct PortnautDoctor {
     }
 
     /// The bottle named in the arguments, or the only bottle.
+    /// The named bottle, or every bottle.
+    static func targets(_ service: WineService, _ arguments: some Collection<String>) throws -> [Bottle] {
+        if let id = arguments.first { return [try service.bottle(id)] }
+        return try service.library().bottles
+    }
     static func target(_ service: WineService, _ arguments: some Collection<String>) throws -> Bottle {
         let library = try service.library()
         if let id = arguments.first { return try service.bottle(id) }

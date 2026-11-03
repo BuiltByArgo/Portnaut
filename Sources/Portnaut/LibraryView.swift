@@ -38,7 +38,7 @@ struct LibraryPage: View {
 
     private var emptyLibrary: some View {
         VStack(alignment: .leading, spacing: 16) {
-            PageHeading(title: "Your library is empty.", subtitle: "Create a bottle for Steam, the EA app or Ubisoft Connect, or install any Windows program.")
+            PageHeading(title: "Your library is empty.", subtitle: "Create a bottle for a game launcher, or install any Windows program. Not sure a game will run? Check it first with Will It Run?")
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "New bottle", symbol: "shippingbox")
@@ -107,8 +107,19 @@ struct FeaturedGame: View {
                         .buttonStyle(PortnautButtonStyle(primary: true)).disabled(!model.canPlay(entry) || analysis == nil)
                 }
             }
+            if let report = model.reports[entry.id] {
+                CompatibilityRow(report: report).card(padding: 14)
+            }
+            if let trial = entry.game.setupTrial { BestSetupCard(entry: entry, trial: trial) }
             PerformanceCard(entry: entry)
-            if let analysis, analysis.recommendation.renderer != entry.bottle.renderer {
+            if entry.bottle.easyMode, let analysis, analysis.recommendation.renderer != entry.bottle.renderer {
+                HStack(spacing: 10) {
+                    Image(systemName: "wand.and.stars").foregroundStyle(Palette.cyan)
+                    Text("Easy mode switches \(entry.bottle.name) to the renderer that suits \(entry.game.name) when you press Play.")
+                        .font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                }.card(padding: 14)
+            } else if let analysis, analysis.recommendation.renderer != entry.bottle.renderer {
                 HStack(spacing: 10) {
                     Image(systemName: "lightbulb").foregroundStyle(Palette.accent)
                     Text("\(entry.game.name) recommends \(analysis.recommendation.renderer.title); \(entry.bottle.name) uses \(entry.bottle.renderer.title). Change it in the bottle’s settings, or give the game its own bottle.")
@@ -136,6 +147,10 @@ struct GameCard: View {
                 HStack(spacing: 6) {
                     Text(entry.bottle.name).font(.system(size: 11)).foregroundStyle(Palette.muted)
                     Spacer()
+                    if let report = model.reports[entry.id] {
+                        if report.status == .blocked { Tag(text: "Won’t run", tint: Palette.accent) }
+                        else if !report.antiCheat.isEmpty { Tag(text: "Anti-cheat", tint: Palette.accent) }
+                    }
                     RendererBadge(current: entry.bottle.renderer, recommended: analysis?.recommendation)
                 }
             }.padding(10).background(model.selectedEntry?.id == entry.id ? Color.white.opacity(0.08) : Palette.card, in: RoundedRectangle(cornerRadius: 12))

@@ -83,6 +83,16 @@ struct BottleDetail: View {
             }
             actions(bottle, running: running)
 
+            VStack(alignment: .leading, spacing: 10) {
+                SectionTitle(title: "Easy mode", symbol: "wand.and.stars")
+                Toggle("Choose the renderer for each game", isOn: binding(\.easyMode, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
+                Text("When you press Play, Portnaut switches this bottle to the renderer the game was tested on, or else the one its files suggest\(bottle.launcher.map { ", always one \($0.title) starts on" } ?? ""). A game started in an open launcher keeps the launcher’s renderer.")
+                    .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                Toggle("Back up saves before each game", isOn: binding(\.autoBackupSaves, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
+                Text("Copies the bottle’s save folders to ~/Documents/Portnaut Backups before every game Portnaut starts. The ten newest automatic copies are kept; backups you make yourself are never removed.")
+                    .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+            }.card()
+
             VStack(alignment: .leading, spacing: 12) {
                 SectionTitle(title: "Graphics", symbol: "cpu")
                 Picker("Renderer", selection: binding(\.renderer, fallback: bottle)) {
@@ -108,6 +118,10 @@ struct BottleDetail: View {
                     Label(note, systemImage: "doc.text").font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
                 }
                 if running { Text("Stop the session to switch renderer.").font(.system(size: 11)).foregroundStyle(Palette.accent) }
+                if let launcher = bottle.launcher, launcher.unsupportedRenderers.contains(bottle.renderer) {
+                    Label("\(launcher.title) does not start properly on \(bottle.renderer.title) (tested). Use \(launcher.recommendation.renderer.title).", systemImage: "exclamationmark.triangle")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true)
+                }
                 if bottle.renderer == .dxmt {
                     let display = MainDisplay.description
                     Toggle("MetalFX upscaling", isOn: binding(\.options.metalFXUpscaling, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
@@ -272,6 +286,11 @@ struct BottleDetail: View {
         switch launcher {
         case .steam: "Games Steam installs join your library as soon as they finish downloading and start through Steam, also while Steam is open. Steam’s window is drawn in software: on Wine’s Mac driver its browser cannot draw from a separate GPU process."
         case .ea: "Games the EA app installs join your library once their install record is written; Find Programs lists any others. Games with EA’s kernel anti-cheat do not run under Wine."
+        case .epic: "Games the Epic Games Launcher installs join your library once it records them, and start through the launcher, which signs them in to Epic’s online services. Fortnite does not run under Wine."
+        case .battlenet: "Battle.net gives each game a folder of its own: Find Programs lists the ones with a shortcut, and Add Game… adds any other. World of Warcraft, Hearthstone and StarCraft II have Mac versions of their own. Call of Duty’s anti-cheat does not run under Wine."
+        case .rockstar: "Keep this bottle on DXMT or DXVK: on D3DMetal the Rockstar Games Launcher fails to initialize. Find Programs lists the games in Rockstar’s games folder; they open the launcher themselves when they need it. GTA Online does not run under Wine: its anti-cheat blocks it. Story modes are not affected."
+        case .gog: "GOG games are DRM-free: they join your library once installed and start without Galaxy. GOG’s offline installers work through Install from File too. Galaxy draws its window in software, which Portnaut sets before it starts."
+        case .amazon: "Games the Amazon Games app installs join your library once their install record is written."
         case .ubisoft, nil: nil
         }
     }
@@ -316,25 +335,33 @@ struct BottleDetail: View {
 }
 
 final class NewBottleDraft: ObservableObject {
-    enum Kind: String, CaseIterable, Identifiable {
-        case ubisoft = "Ubisoft Connect", steam = "Steam", ea = "EA app", general = "Empty bottle"
-        var id: String { rawValue }
+    enum Kind: Hashable, Identifiable {
+        case launcher(Launcher), general
+        static let all = Launcher.allCases.map(Kind.launcher) + [.general]
+        var id: String { launcher?.rawValue ?? "general" }
         var launcher: Launcher? {
-            switch self {
-            case .ubisoft: .ubisoft
-            case .steam: .steam
-            case .ea: .ea
-            case .general: nil
+            if case .launcher(let launcher) = self { return launcher }
+            return nil
+        }
+        var title: String { launcher?.title ?? "Empty bottle" }
+        /// Short enough for the type grid.
+        var tileTitle: String {
+            switch launcher {
+            case .epic: "Epic Games"
+            case .rockstar: "Rockstar Games"
+            default: title
             }
         }
+        var symbol: String { launcher?.symbol ?? "shippingbox" }
         var recommendation: Recommendation { launcher?.recommendation ?? GraphicsAdvisor.recommendation(for: Bottle(id: "", name: "", renderer: .dxmt), analyses: []) }
-        var defaultName: String { self == .general ? "Games" : rawValue }
+        var defaultName: String { launcher?.title ?? "Games" }
     }
     /// Choosing a type resets the name and renderer to that type's defaults.
-    @Published var kind = Kind.ubisoft { didSet { name = kind.defaultName; renderer = kind.recommendation.renderer } }
-    @Published var name = Kind.ubisoft.defaultName
-    @Published var renderer = Kind.ubisoft.recommendation.renderer
+    @Published var kind = Kind.launcher(.ubisoft) { didSet { name = kind.defaultName; renderer = kind.recommendation.renderer } }
+    @Published var name = Kind.launcher(.ubisoft).defaultName
+    @Published var renderer = Kind.launcher(.ubisoft).recommendation.renderer
     @Published var windows = WindowsVersion.win10
+    @Published var easyMode = true
 }
 
 struct NewBottleSheet: View {
@@ -346,7 +373,22 @@ struct NewBottleSheet: View {
         let name = draft.name.trimmingCharacters(in: .whitespaces)
         VStack(alignment: .leading, spacing: 18) {
             Text("New Bottle").font(.system(size: 22, weight: .medium, design: .rounded))
-            Picker("Type", selection: $draft.kind) { ForEach(NewBottleDraft.Kind.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                ForEach(NewBottleDraft.Kind.all) { kind in
+                    let selected = draft.kind == kind
+                    Button { draft.kind = kind } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: kind.symbol).frame(width: 16).foregroundStyle(selected ? Palette.accent : Palette.muted)
+                            Text(kind.tileTitle).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 10).frame(height: 34).contentShape(Rectangle())
+                        .background(selected ? Palette.accent.opacity(0.16) : Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(selected ? Palette.accent : Color.white.opacity(0.1)))
+                    }
+                    .buttonStyle(.plain).help(kind.title).accessibilityLabel(kind.title).accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
             TextField("Name", text: $draft.name).textFieldStyle(.roundedBorder)
             VStack(alignment: .leading, spacing: 8) {
                 Picker("Renderer", selection: $draft.renderer) { ForEach(Renderer.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
@@ -354,12 +396,13 @@ struct NewBottleSheet: View {
                 if let note = draft.renderer.licenseNote { Text(note).font(.system(size: 11)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true) }
             }
             Picker("Windows version", selection: $draft.windows) { ForEach(WindowsVersion.allCases) { Text($0.title).tag($0) } }.frame(maxWidth: 300)
+            Toggle("Easy mode: choose the renderer for each game, and back up saves before each game", isOn: $draft.easyMode).toggleStyle(.switch)
             Text("The renderer, Windows version and other settings can be changed later in the bottle’s settings.").font(.system(size: 11)).foregroundStyle(Palette.muted)
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Create") {
-                    model.createBottle(name: name, launcher: draft.kind.launcher, renderer: draft.renderer, windowsVersion: draft.windows)
+                    model.createBottle(name: name, launcher: draft.kind.launcher, renderer: draft.renderer, windowsVersion: draft.windows, easyMode: draft.easyMode)
                     dismiss()
                 }.keyboardShortcut(.defaultAction).disabled(name.isEmpty || model.busy)
             }

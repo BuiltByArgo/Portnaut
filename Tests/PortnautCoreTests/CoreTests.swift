@@ -105,7 +105,8 @@ final class CoreTests {
         plain.highResolution = false
         let other = WineService.profile(for: plain)
         #expect(other.contains("\"Version\"=\"win11\"") && other.contains("\"RetinaMode\"=\"n\"") && other.contains("\"LogPixels\"=dword:00000060"))
-        #expect(!other.contains("AppDefaults"))
+        // Only Social Club's entry, which every bottle carries.
+        #expect(!other.replacingOccurrences(of: Launcher.rockstar.registry, with: "").contains("AppDefaults"))
     }
     @Test func testUbisoftConnectGetsBrowserSwitchesAndNoGPUIdentity() {
         // Connect's browser draws through ANGLE in its own process. Portnaut never changes the GPU that
@@ -443,6 +444,13 @@ final class CoreTests {
         let command = try service.launchCommand(for: portal, in: current)
         #expect(command.executable.lastPathComponent == "steam.exe")
         #expect(command.arguments == ["-cef-disable-gpu", "-applaunch", "400"])
+        #expect(portal.arguments.isEmpty)
+        // A Steam game that needs launch options under Wine gets them when it joins the library.
+        var gta = DetectedProgram(name: "Grand Theft Auto V Legacy", executable: portal.executable, launcherArguments: ["-applaunch", "271590"], source: .steam)
+        gta.reliable = true
+        let gtaGame = try #require(try service.addPrograms([gta], to: current).first)
+        #expect(gtaGame.arguments == ["-nobattleye"])
+        #expect(try service.launchCommand(for: gtaGame, in: try service.bottle("store")).arguments == ["-cef-disable-gpu", "-applaunch", "271590", "-nobattleye"])
         let deadSpace = try #require(current.games.first { $0.name == "Dead Space & More" })
         #expect(try service.launchCommand(for: deadSpace, in: current).executable.lastPathComponent == "Dead Space.exe")
         #expect(service.analyze(deadSpace, in: current)?.recommendation.renderer == .d3dmetal)
@@ -450,6 +458,341 @@ final class CoreTests {
         var bare = current
         bare.launcher = nil
         #expect(throws: PortnautError.self) { try service.launchCommand(for: portal, in: bare) }
+    }
+
+    @Test func testMoreLaunchersFindTheirGames() throws {
+        let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
+        let bottle = Bottle(id: "epic", name: "Epic", launcher: .epic, renderer: .d3dmetal)
+        let drive = service.paths.bottle(bottle).drive
+        func write(_ relative: String, _ text: String) throws {
+            let url = drive.appendingPathComponent(relative)
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(text.utf8).write(to: url)
+        }
+        try writePE(drive.appendingPathComponent(Launcher.epic.executable), machine: 0x8664, imports: [])
+        let manifests = "ProgramData/Epic/EpicGamesLauncher/Data/Manifests/"
+        try write(manifests + "A1.item", """
+            {"DisplayName": "Hades", "InstallLocation": "C:\\\\Program Files\\\\Epic Games\\\\Hades", "LaunchExecutable": "x64\\\\Hades.exe",
+             "AppName": "Min", "MainGameAppName": "Min", "CatalogNamespace": "e6c3a5", "CatalogItemId": "8a3b+1", "bIsIncompleteInstall": false}
+            """)
+        try write(manifests + "B2.item", """
+            {"DisplayName": "Hades Soundtrack", "InstallLocation": "C:\\\\Program Files\\\\Epic Games\\\\Hades", "LaunchExecutable": "",
+             "AppName": "MinOST", "MainGameAppName": "Min", "CatalogNamespace": "e6c3a5", "CatalogItemId": "77"}
+            """)
+        try write(manifests + "C3.item", """
+            {"DisplayName": "Half Downloaded", "InstallLocation": "C:\\\\Program Files\\\\Epic Games\\\\Half", "LaunchExecutable": "half.exe",
+             "AppName": "Half", "CatalogNamespace": "n", "CatalogItemId": "i", "bIsIncompleteInstall": true}
+            """)
+        try writePE(drive.appendingPathComponent("Program Files/Epic Games/Hades/x64/Hades.exe"), machine: 0x8664, imports: ["d3d11.dll"])
+        try writePE(drive.appendingPathComponent("Program Files/Epic Games/Half/half.exe"), machine: 0x8664, imports: [])
+        try write("GOG Games/Heroes 3/goggame-1207658787.info", """
+            {"gameId": "1207658787", "name": "Heroes of Might and Magic 3", "playTasks": [
+             {"type": "URLTask", "link": "https://www.gog.com"},
+             {"type": "FileTask", "isPrimary": true, "path": "HD_Launcher.exe", "arguments": "-lang en"}]}
+            """)
+        try writePE(drive.appendingPathComponent("GOG Games/Heroes 3/HD_Launcher.exe"), machine: 0x014c, imports: ["ddraw.dll"])
+        try write("Amazon Games/Library/Quake/fuel.json", #"{"SchemaVersion": "2", "Main": {"Command": "bin\\quake.exe", "Args": ["-prime"]}}"#)
+        try writePE(drive.appendingPathComponent("Amazon Games/Library/Quake/bin/quake.exe"), machine: 0x8664, imports: [])
+        try writePE(drive.appendingPathComponent("Program Files/Rockstar Games/Launcher/LauncherPatcher.exe"), machine: 0x8664, imports: [])
+        try writePE(drive.appendingPathComponent("Program Files/Rockstar Games/Grand Theft Auto V/GTA5.exe"), machine: 0x8664, imports: ["d3d11.dll"])
+
+        let found = ProgramScanner.scan(drive: drive)
+        let byName = Dictionary(uniqueKeysWithValues: found.map { ($0.name, $0) })
+        #expect(Set(byName.keys) == ["Hades", "Heroes of Might and Magic 3", "Quake", "Grand Theft Auto V"])
+        #expect(byName["Hades"]?.launcherArguments == ["com.epicgames.launcher://apps/e6c3a5%3A8a3b%2B1%3AMin?action=launch&silent=true"])
+        #expect(byName["Heroes of Might and Magic 3"]?.arguments == ["-lang", "en"])
+        #expect(byName["Quake"]?.executable == "Amazon Games/Library/Quake/bin/quake.exe")
+        #expect(byName["Quake"]?.arguments == ["-prime"])
+        #expect(byName["Grand Theft Auto V"]?.reliable == false)
+        #expect(Set(ProgramScanner.scan(drive: drive, reliableOnly: true).map(\.name)) == ["Hades", "Heroes of Might and Magic 3", "Quake"])
+
+        try service.paths.saveLibrary(Library(bottles: [bottle]))
+        let hades = try #require(try service.addInstalledGames(in: bottle).first { $0.name == "Hades" })
+        let command = try service.launchCommand(for: hades, in: try service.bottle("epic"))
+        #expect(command.executable.lastPathComponent == "EpicGamesLauncher.exe")
+        #expect(command.arguments == hades.launcherArguments)
+    }
+
+    @Test func testNewLauncherRecipes() throws {
+        #expect(Launcher.epic.installerIsPackage)
+        #expect(Launcher.allCases.filter(\.installerIsPackage) == [.epic])
+        #expect(Set(Launcher.allCases.map { ($0.executable as NSString).lastPathComponent.lowercased() }).count == Launcher.allCases.count)
+        #expect(Launcher.owning("Program Files/Rockstar Games/Launcher/LauncherPatcher.exe") == .rockstar)
+        #expect(Launcher.owning("Games/Some Game/Launcher.exe") == nil)
+        #expect(Launcher(rawValue: "battlenet")?.title == "Battle.net")
+        #expect(Launcher.battlenet.registry == "[HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\Battle.net.exe]\n\"CommandLineAppend\"=\"--in-process-gpu --disable-gpu\"\n")
+        #expect(Launcher.amazon.registry.contains("AppDefaults\\Amazon Games UI.exe]"))
+        #expect(Launcher.epic.registry.isEmpty)
+        #expect(Launcher.rockstar.registry.contains("AppDefaults\\SocialClubHelper.exe]"))
+        // Social Club's fix is in every bottle, once: Rockstar's games start its launcher from any store.
+        for launcher in [nil] + Launcher.allCases.map(Optional.some) {
+            let profile = WineService.profile(for: Bottle(id: "b", name: "B", launcher: launcher, renderer: .dxmt))
+            #expect(profile.components(separatedBy: "AppDefaults\\SocialClubHelper.exe]").count == 2)
+        }
+        // The Rockstar launcher does not start on D3DMetal, so a DirectX 12 game there gets DXMT.
+        #expect(Launcher.rockstar.recommendation.renderer == .dxmt)
+        let dx12 = Recommendation(renderer: .d3dmetal, reason: "DirectX 12")
+        #expect(Launcher.rockstar.adjusted(dx12).renderer == .dxmt)
+        #expect(Launcher.steam.adjusted(dx12) == dx12)
+        for launcher in Launcher.allCases { #expect(!launcher.unsupportedRenderers.contains(launcher.recommendation.renderer)) }
+        // Galaxy's settings keep what is there and gain the switch; unreadable settings are left alone.
+        let merged = try #require(Launcher.galaxySettings(merging: Data(#"{"clientInstanceId": "abc", "chromiumClientAppArguments": {"--lang": "en"}}"#.utf8)))
+        let settings = try #require(try JSONSerialization.jsonObject(with: merged) as? [String: Any])
+        #expect(settings["clientInstanceId"] as? String == "abc")
+        #expect(settings["chromiumClientAppArguments"] as? [String: String] == ["--lang": "en", "--disable-gpu": ""])
+        #expect(Launcher.galaxySettings(merging: nil).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: [String: String]] } == ["chromiumClientAppArguments": ["--disable-gpu": ""]])
+        #expect(Launcher.galaxySettings(merging: Data("not json".utf8)) == nil)
+        let rdr2 = GraphicsAnalysis(architecture: "x86_64-windows", imported: [], mentioned: [], recommendation: dx12)
+        #expect(GraphicsAdvisor.recommendation(for: Bottle(id: "r", name: "R", launcher: .rockstar, renderer: .dxmt), analyses: [rdr2]).renderer == .dxmt)
+        // Amazon Games installs per user: any Windows user folder matches.
+        let paths = PortnautPaths(root: root).bottle(Bottle(id: "amazon", name: "Amazon", launcher: .amazon, renderer: .d3dmetal))
+        #expect(paths.url(for: Launcher.amazon.executable) == nil)
+        try writePE(paths.drive.appendingPathComponent("users/player/AppData/Local/Amazon Games/App/Amazon Games.exe"), machine: 0x8664, imports: [])
+        #expect(paths.url(for: Launcher.amazon.executable)?.path.hasSuffix("users/player/AppData/Local/Amazon Games/App/Amazon Games.exe") == true)
+        #expect(paths.url(for: "users/*/../../escape.exe") == nil)
+    }
+
+    @Test func testGalaxyIsPreparedBeforeItStarts() throws {
+        let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
+        let bottle = Bottle(id: "gog", name: "GOG", launcher: .gog, renderer: .dxvk)
+        let drive = service.paths.bottle(bottle).drive
+        let locks = drive.appendingPathComponent(Launcher.galaxyLockFiles)
+        try FileManager.default.createDirectory(at: locks, withIntermediateDirectories: true)
+        try Data("36".utf8).write(to: locks.appendingPathComponent("GalaxyClient.exe-galaxy-client.lock"))
+        try Data().write(to: locks.appendingPathComponent("keep.txt"))
+        try service.prepare(.gog, in: bottle)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: locks.path) == ["keep.txt"])
+        let settings = try Data(contentsOf: drive.appendingPathComponent(Launcher.galaxySettings))
+        #expect(String(decoding: settings, as: UTF8.self).contains("\"--disable-gpu\""))
+        // Other launchers' files are left alone.
+        try service.prepare(.steam, in: Bottle(id: "steam", name: "Steam", launcher: .steam, renderer: .dxvk))
+        #expect(!FileManager.default.fileExists(atPath: service.paths.bottle(Bottle(id: "steam", name: "Steam", renderer: .dxvk)).drive.appendingPathComponent("ProgramData/GOG.com").path))
+    }
+
+    // MARK: - Compatibility and easy mode
+
+    private func compatibilityDatabase() -> CompatibilityDatabase {
+        CompatibilityDatabase(
+            curated: ["generated": "2026-11-01", "games": [
+                ["id": "hades-ii", "title": "Hades II", "status": "community", "steam_appid": 1145350, "renderer": "dxmt"],
+                ["id": "elden-ring", "title": "ELDEN RING", "status": "verified-local", "steam_appid": 1245620, "renderer": "d3dmetal",
+                 "anticheat": ["names": ["Easy Anti-Cheat"], "macVerdict": "warning"], "url": "https://gethighball.com/games/elden-ring"],
+                ["id": "rdr2", "title": "Red Dead Redemption 2", "status": "verified-local", "steam_appid": 1174180, "renderer": "d3dmetal"],
+                ["id": "odd", "title": "Odd Game", "status": "something-new"],
+                ["id": "ow2", "title": "Overwatch 2", "status": "reported-upstream", "steam_appid": 2357570, "renderer": "dxmt"]]],
+            predictions: ["generated": "2026-08-24", "games": [
+                "219990": ["title": "Grim Dawn", "macPrediction": "likely"],
+                "1145350": ["title": "Hades II", "macPrediction": "unlikely"],
+                "208480": ["title": "Assassin's Creed® III", "macPrediction": "likely"],
+                "570": ["title": "Dota 2", "macPrediction": "maybe"]]],
+            antiCheat: ["games": [
+                "valorant": ["title": "VALORANT", "anticheats": ["Vanguard"], "macVerdict": "blocked"],
+                "dota-2": ["title": "Dota 2", "anticheats": ["VAC"], "steam_appid": 570, "macVerdict": "warning"],
+                "hades-ii": ["title": "Hades II", "anticheats": ["Something"], "steam_appid": 1145350, "macVerdict": "blocked"]]])
+    }
+
+    @Test func testCompatibilityDatabaseMergesItsSources() throws {
+        let database = compatibilityDatabase()
+        #expect(database.generated == "2026-11-01")
+        // Curated reports keep their renderer and gain anti-cheat; a blocked anti-cheat verdict wins.
+        let elden = try #require(database.report(steamAppID: 1245620, title: ""))
+        #expect(elden.status == .tested && elden.renderer == .d3dmetal && elden.antiCheat == ["Easy Anti-Cheat"])
+        #expect(database.report(title: "Hades II")?.status == .blocked)
+        // Anti-cheat-only entries take the Linux prediction; prediction-only games are predictions.
+        let dota = try #require(database.report(steamAppID: 570, title: "Dota 2"))
+        #expect(dota.status == .maybe && dota.antiCheat == ["VAC"])
+        #expect(database.report(steamAppID: 219990, title: "")?.status == .likely)
+        #expect(database.report(title: "Valorant")?.status == .blocked)
+        #expect(database.report(title: "Odd Game") == nil)
+        // A Wine release's notes are a report, not a test on a Mac.
+        #expect(database.report(steamAppID: 2357570, title: "")?.status == .reported)
+        // Titles match without case, apostrophes, trademark signs or edition names.
+        #expect(database.report(title: "assassins creed iii")?.steamAppID == 208480)
+        #expect(database.report(title: "Grim Dawn Definitive Edition")?.steamAppID == 219990)
+        #expect(database.report(steamAppID: 999, title: "Elden Ring")?.status == .tested)
+        // Search: whole title first, then titles starting with the words.
+        #expect(database.search("hades ii").first?.title == "Hades II")
+        #expect(database.search("red dead").map(\.title) == ["Red Dead Redemption 2"])
+        #expect(database.search("a").isEmpty)
+        #expect(CompatibilityReport.list(["A", "B", "C"]) == "A, B and C")
+        #expect(elden.explanation == "Runs on D3DMetal, verified on a Mac. It uses Easy Anti-Cheat, which may block online play.")
+    }
+
+    @Test func testCompatibilityFilesAreReadFromAFolder() throws {
+        let folder = root.appendingPathComponent("Compatibility")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        #expect(CompatibilityDatabase(folder: folder) == nil)
+        try Data(#"{"generated": "2026-10-01", "games": [{"id": "x", "title": "X Game", "status": "community", "steam_appid": 1}]}"#.utf8).write(to: folder.appendingPathComponent("games.json"))
+        try Data("not json".utf8).write(to: folder.appendingPathComponent("derived.json"))
+        let database = try #require(CompatibilityDatabase(folder: folder))
+        #expect(database.reports.map(\.title) == ["X Game"])
+        // The data folder's copy is used only when it is newer than the app's.
+        let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
+        let bundled = root.appendingPathComponent("Bundled")
+        try FileManager.default.createDirectory(at: bundled, withIntermediateDirectories: true)
+        try Data(#"{"generated": "2026-11-01", "games": [{"id": "y", "title": "Y Game", "status": "community"}]}"#.utf8).write(to: bundled.appendingPathComponent("games.json"))
+        #expect(service.compatibilityDatabase(bundled: bundled)?.reports.map(\.title) == ["Y Game"])
+    }
+
+    @Test func testEasyModeChoosesARendererTheLauncherStartsOn() throws {
+        let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
+        let database = compatibilityDatabase()
+        func bottle(_ launcher: Launcher?, game: Game) throws -> Bottle {
+            var bottle = Bottle(id: launcher?.rawValue ?? "general", name: "B", launcher: launcher, renderer: .dxvk)
+            bottle.easyMode = true
+            bottle.games = [game]
+            try writePE(service.paths.bottle(bottle).drive.appendingPathComponent(game.executable), machine: 0x8664, imports: ["d3d11.dll"])
+            return bottle
+        }
+        var rdr2 = Game(id: "rdr2", name: "Red Dead Redemption 2", executable: "Games/RDR2/RDR2.exe")
+        // In a Steam bottle the tested renderer is used.
+        rdr2.launcherArguments = ["-applaunch", "1174180"]
+        let steam = try bottle(.steam, game: rdr2)
+        let report = service.compatibilityReport(for: rdr2, in: steam, database: database)
+        #expect(report?.steamAppID == 1174180)
+        #expect(service.easyModeChoice(for: rdr2, in: steam, report: report)?.renderer == .d3dmetal)
+        // The Rockstar launcher does not start on D3DMetal: the game's files decide, kept off D3DMetal.
+        rdr2.launcherArguments = nil
+        let rockstar = try bottle(.rockstar, game: rdr2)
+        #expect(service.easyModeChoice(for: rdr2, in: rockstar, report: report)?.renderer == .dxmt)
+        // Predictions name no renderer: the game's files decide.
+        let grim = Game(id: "grim", name: "Grim Dawn", executable: "Games/Grim Dawn/x64/Grim Dawn.exe")
+        let general = try bottle(nil, game: grim)
+        #expect(service.easyModeChoice(for: grim, in: general, report: database.report(title: "Grim Dawn"))?.renderer == .dxmt)
+        // Games Portnaut has tested itself come first.
+        let ac3 = Game(id: KnownGame.ac3.id, name: "AC III", executable: "Games/AC3/ACIII.exe")
+        let known = service.compatibilityReport(for: ac3, in: Bottle(id: "u", name: "U", launcher: .ubisoft, renderer: .dxmt), database: database)
+        #expect(known?.status == .tested && known?.renderer == .dxmt)
+        #expect(Launcher.ubisoft.adjusted(Recommendation(renderer: .dxvk, reason: "")).renderer == .dxmt)
+    }
+
+    @Test func testSteamDownloadsAreSeenBeforeTheyFinish() throws {
+        let drive = try makeDrive()
+        let manifest = { (id: String, name: String, flags: Int) in
+            "\"AppState\"\n{\n\t\"appid\"\t\t\"\(id)\"\n\t\"name\"\t\t\"\(name)\"\n\t\"StateFlags\"\t\t\"\(flags)\"\n\t\"installdir\"\t\t\"\(name)\"\n}\n"
+        }
+        try Data(manifest("1172470", "Apex Legends", 1026).utf8).write(to: drive.appendingPathComponent("SteamLibrary/steamapps/appmanifest_1172470.acf"))
+        let downloads = ProgramScanner.steamDownloads(drive: drive)
+        // Left 4 Dead (500) is still updating in makeDrive; Portal (400) is installed.
+        #expect(Set(downloads.map(\.appID)) == [500, 1172470])
+        #expect(downloads.first { $0.appID == 1172470 }?.name == "Apex Legends")
+    }
+
+    @Test func testAutomaticSaveBackupsKeepTheNewestTen() async throws {
+        let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
+        let bottle = Bottle(id: "saves", name: "Saves", renderer: .dxmt)
+        let save = service.paths.bottle(bottle).drive.appendingPathComponent("users/player/Documents/My Game/save.dat")
+        try FileManager.default.createDirectory(at: save.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("1".utf8).write(to: save)
+        let mine = try await service.backUpSaves(of: bottle)
+        for _ in 0..<12 { try await service.backUpSaves(of: bottle, automatic: true) }
+        let backups = service.saveBackups(of: bottle)
+        #expect(backups.filter { $0.automatic == true }.count == 10)
+        #expect(backups.contains { $0.id == mine.id && $0.automatic == nil })
+        #expect(Set(backups.map(\.id)).count == backups.count)
+    }
+
+    @Test func testBottlesFromBeforeEasyModeKeepTheirBehaviour() throws {
+        let old = #"{"id": "b", "name": "B", "renderer": "dxmt"}"#
+        let bottle = try JSONDecoder().decode(Bottle.self, from: Data(old.utf8))
+        #expect(!bottle.easyMode && !bottle.autoBackupSaves)
+        var easy = bottle
+        easy.easyMode = true; easy.autoBackupSaves = true
+        let again = try JSONDecoder().decode(Bottle.self, from: try JSONEncoder().encode(easy))
+        #expect(again.easyMode && again.autoBackupSaves)
+        let oldBackup = #"{"id": "x", "date": 0, "bottleName": "B", "folders": [], "bytes": 0, "files": 0}"#
+        #expect(try JSONDecoder().decode(SaveBackup.self, from: Data(oldBackup.utf8)).automatic == nil)
+    }
+
+    // MARK: - Find my best setup
+
+    private func run(_ renderer: Renderer, average: Double, low: Double, gpu: Double = 10, seconds: Int = 120) -> PerformanceRun {
+        PerformanceRun(date: Date(timeIntervalSince1970: Double(seconds) + average), renderer: renderer, configuration: renderer.title, seconds: seconds,
+                       averageFPS: average, lowFPS: low, frameTimeP95: 20, gpuMilliseconds: gpu, latencyMilliseconds: nil)
+    }
+
+    @Test func testBestSetupRoundsAndWinner() throws {
+        let dx11 = GraphicsAnalysis(architecture: "x86_64-windows", imported: [.d3d11], mentioned: [], recommendation: Recommendation(renderer: .dxmt, reason: ""))
+        #expect(SetupTrial.candidates(for: dx11, launcher: nil) == [.dxmt, .d3dmetal, .dxvk])
+        #expect(SetupTrial.candidates(for: dx11, launcher: .ubisoft) == [.dxmt, .d3dmetal])
+        #expect(SetupTrial.candidates(for: dx11, launcher: .rockstar) == [.dxmt, .dxvk])
+        var dx12 = dx11
+        dx12.imported = [.d3d12]; dx12.recommendation.renderer = .d3dmetal
+        #expect(SetupTrial.candidates(for: dx12, launcher: nil) == [.d3dmetal])
+
+        var trial = SetupTrial(renderers: [.dxmt, .d3dmetal])
+        #expect(trial.next == .dxmt && trial.round == 1)
+        let wrongRenderer = trial.record(run(.d3dmetal, average: 50, low: 40))
+        let tooShort = trial.record(run(.dxmt, average: 60, low: 50, seconds: 40))
+        #expect(!wrongRenderer && !tooShort)
+        #expect(trial.shortRun?.seconds == 40 && trial.next == .dxmt)
+        let first = trial.record(run(.dxmt, average: 61, low: 47))
+        #expect(first)
+        #expect(trial.shortRun == nil && trial.next == .d3dmetal && trial.round == 2 && trial.winner == nil)
+        let second = trial.record(run(.d3dmetal, average: 44, low: 30))
+        #expect(second)
+        #expect(trial.finished)
+        let winner = try #require(trial.winner)
+        #expect(winner.renderer == .dxmt && winner.reason == "DXMT averaged 61 fps, against 44 fps on D3DMetal.")
+
+        // About the same average: fewer drops win; then less GPU time (a capped frame rate).
+        let lows = try #require(MeasuredSetup.best(of: [run(.dxmt, average: 60, low: 40), run(.d3dmetal, average: 61, low: 52)]))
+        #expect(lows.renderer == .d3dmetal && lows.reason.contains("dropped less"))
+        let capped = try #require(MeasuredSetup.best(of: [run(.dxmt, average: 62, low: 58, gpu: 9.5), run(.d3dmetal, average: 62, low: 58, gpu: 13.2)]))
+        #expect(capped.renderer == .dxmt && capped.reason.contains("less GPU time"))
+        #expect(MeasuredSetup.best(of: [run(.dxmt, average: 60, low: 50)]) == nil)
+    }
+
+    @Test func testBestSetupIsKeptAndEasyModeUsesIt() async throws {
+        let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
+        var game = Game(id: "game", name: "Game", executable: "Games/Game/game.exe")
+        var bottle = Bottle(id: "b", name: "B", renderer: .dxmt)
+        bottle.games = [game]
+        try writePE(service.paths.bottle(bottle).drive.appendingPathComponent(game.executable), machine: 0x8664, imports: ["d3d11.dll"])
+        try service.paths.saveLibrary(Library(bottles: [bottle]))
+        await #expect(throws: PortnautError.self) { try await service.keepSetupTrial(for: game, in: bottle) }
+        let trial = try service.startSetupTrial(for: game, in: bottle)
+        #expect(trial.renderers == [.dxmt, .d3dmetal, .dxvk])
+        // A session that recorded nothing is noted; the next real run clears the note.
+        service.recordSetupRound(nil, of: game, in: bottle)
+        #expect(try service.bottle("b").games[0].setupTrial?.emptyRound == true)
+        service.recordSetupRound(run(.dxmt, average: 40, low: 30, seconds: 20), of: game, in: bottle)
+        let afterShort = try service.bottle("b").games[0].setupTrial
+        #expect(afterShort?.emptyRound == nil && afterShort?.shortRun?.seconds == 20 && afterShort?.next == .dxmt)
+        // Sessions on each round's renderer become the rounds.
+        service.recordSetupRound(run(.dxmt, average: 40, low: 30), of: game, in: bottle)
+        service.recordSetupRound(run(.d3dmetal, average: 58, low: 49), of: game, in: bottle)
+        service.recordSetupRound(run(.dxvk, average: 35, low: 22), of: game, in: bottle)
+        #expect(try service.bottle("b").games[0].setupTrial?.winner?.renderer == .d3dmetal)
+        // Without easy mode the bottle switches now; the game keeps its result.
+        let best = try await service.keepSetupTrial(for: game, in: bottle)
+        bottle = try service.bottle("b")
+        game = bottle.games[0]
+        #expect(best.renderer == .d3dmetal && bottle.renderer == .d3dmetal && game.setupTrial == nil && game.bestSetup?.runs.count == 3)
+        // Easy mode puts the measured result before the database and the game's files.
+        bottle.easyMode = true
+        let report = CompatibilityReport(id: "game", title: "Game", status: .tested, renderer: .dxvk)
+        #expect(service.easyModeChoice(for: game, in: bottle, report: report)?.renderer == .d3dmetal)
+        // A launcher that does not start on the measured renderer falls back.
+        bottle.launcher = .rockstar
+        #expect(service.easyModeChoice(for: game, in: bottle, report: nil)?.renderer == .dxmt)
+        // A game only one renderer runs has nothing to compare.
+        let dx12 = Game(id: "dx12", name: "New Game", executable: "Games/New/new.exe")
+        try writePE(service.paths.bottle(bottle).drive.appendingPathComponent(dx12.executable), machine: 0x8664, imports: ["d3d12.dll"])
+        var withNew = try service.bottle("b")
+        withNew.games.append(dx12)
+        try service.paths.saveLibrary(Library(bottles: [withNew]))
+        #expect(throws: PortnautError.self) { try service.startSetupTrial(for: dx12, in: withNew) }
+        // Older library files load without these fields.
+        let old = try JSONDecoder().decode(Game.self, from: Data(#"{"id": "g", "name": "G", "executable": "g.exe"}"#.utf8))
+        #expect(old.setupTrial == nil && old.bestSetup == nil)
+    }
+
+    @Test func testStickStepsOncePerPush() {
+        var stick = StickRepeat()
+        let steps = [0.2, 0.7, 0.9, 0.5, 0.2, 0.65, 0.1, -0.8, -0.4, -0.7, 0.0, -0.61].map { stick.step(Float($0)) }
+        // Held past the threshold: one step; back inside the release zone before the next.
+        #expect(steps == [0, 1, 0, 0, 0, 1, 0, -1, 0, 0, 0, -1])
     }
 
     @Test func testRuntimeIsDriveY() throws {

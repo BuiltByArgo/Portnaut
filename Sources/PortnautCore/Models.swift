@@ -12,8 +12,9 @@ public struct PortnautError: LocalizedError, Sendable {
 public enum GraphicsProfile {
     /// WebGL on ANGLE's Direct3D 11 path inside the launcher process; the interface composites in software.
     public static let connectBrowserArguments = ["--in-process-gpu", "--use-gl=angle", "--use-angle=d3d11", "--disable-gpu-compositing"]
-    /// Steam's web helper (Chromium) in software, with its compositor in the process that owns the window.
-    public static let steamWebHelperSwitches = "--in-process-gpu --disable-gpu"
+    /// A Chromium-based launcher window (Steam’s web helper, Amazon Games) in software, with its
+    /// compositor in the process that owns the window.
+    public static let softwareBrowserSwitches = "--in-process-gpu --disable-gpu"
     /// Wine reports the Mac's current mode and scaled virtual modes, and accepts a game's mode
     /// change without switching the real display. Without it, AC III switched a ProMotion panel
     /// to 47/48 Hz and back on every alt-tab, which mis-scaled the window. Despite the key name,
@@ -203,9 +204,15 @@ public struct BottlePaths: Sendable {
     public var ready: Bool {
         FileManager.default.fileExists(atPath: marker.path) && FileManager.default.fileExists(atPath: prefix.appendingPathComponent("system.reg").path)
     }
-    /// A path stored relative to drive_c, if it stays inside it and exists.
+    /// A path stored relative to drive_c, if it stays inside it and exists. A `users/*/` start
+    /// matches any Windows user folder, for programs that install per user.
     public func url(for relative: String) -> URL? {
         guard !relative.hasPrefix("/"), !relative.split(separator: "/").contains("..") else { return nil }
+        if relative.hasPrefix("users/*/") {
+            let rest = relative.dropFirst("users/*/".count)
+            let users = (try? FileManager.default.contentsOfDirectory(atPath: drive.appendingPathComponent("users").path)) ?? []
+            return users.sorted().lazy.compactMap { url(for: "users/\($0)/\(rest)") }.first
+        }
         let url = drive.appendingPathComponent(relative).resolvingSymlinksInPath()
         guard PortnautPaths.isContained(url, by: drive), FileManager.default.fileExists(atPath: url.path) else { return nil }
         return url
