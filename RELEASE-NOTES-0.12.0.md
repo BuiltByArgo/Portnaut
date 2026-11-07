@@ -2,7 +2,7 @@
 
 **Install a game and play: easy mode, Will It Run?, five more launchers and Couch Mode.**
 
-Portnaut runs Windows games on Apple silicon Macs. It keeps each launcher or game in its own bottle and picks the graphics renderer (DXMT, D3DMetal, DXVK or Wine's own) that suits each game. Free and open source, by Built by Argo. Early access.
+Portnaut runs Windows games on Apple silicon Macs. It keeps each launcher or game in its own bottle and picks the graphics renderer (DXMT, D3DMetal, DXVK or Wine's own) that suits each game. Free and open source, by Built by Argo. Public beta.
 
 ## What's new since 0.8.0
 
@@ -52,7 +52,7 @@ shasum -a 256 Portnaut-0.12.0.zip
 
 - Games with kernel-level anti-cheat don't run under Wine, and some games run only offline (GTA V's story mode, but not GTA Online); Will It Run? names a game's anti-cheat.
 - DirectX 12 games need D3DMetal.
-- Keep backups of saves you care about: Portnaut is early access.
+- Keep backups of saves you care about: Portnaut is in public beta.
 
 Support: [builtbyargo@proton.me](mailto:builtbyargo@proton.me) · Support Portnaut on [Ko-fi](https://ko-fi.com/A2H229BWWV)
 

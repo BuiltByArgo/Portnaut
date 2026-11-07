@@ -29,7 +29,7 @@
 Portnaut keeps each game launcher or game in its own **bottle**, a separate Windows environment, and
 runs it with Wine and a graphics translator that turns Direct3D into Apple's Metal. It looks at every
 game you add and recommends the translator that suits it. In easy mode it sets each game up for you:
-install a game and play. Early access.
+install a game and play. Public beta.
 
 ## Features
 
@@ -177,7 +177,7 @@ Its logs stay on your Mac. A diagnostics report is a file you choose to save and
   software; games are not.
 - New and not yet tried with real games: Find My Best Setup's rounds, and Couch Mode with a controller.
   Reports are welcome.
-- Portnaut is early access: expect rough edges, and keep backups of saves you care about.
+- Portnaut is in public beta: expect rough edges, and keep backups of saves you care about.
 
 ## Build from source
 
