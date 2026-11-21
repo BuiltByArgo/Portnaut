@@ -1,0 +1,54 @@
+--- a/dlls/wined3d/adapter_gl.c
++++ b/dlls/wined3d/adapter_gl.c
+@@ -1239,6 +1239,20 @@
+     return HW_VENDOR_NVIDIA;
+ }
+ 
++/* Preserve the previous Wine OpenGL feature-level selection for Rockstar's
++ * launcher UI only. Do not advertise polygon-offset-clamp support itself. */
++BOOL wined3d_rockstar_legacy_feature_levels(void)
++{
++    WCHAR path[MAX_PATH], enabled[2], *base;
++    if (GetEnvironmentVariableW(L"GTM_ROCKSTAR_SWIFTSHADER", enabled, 2) != 1 || enabled[0] != L'1')
++        return FALSE;
++    if (!GetModuleFileNameW(NULL, path, ARRAY_SIZE(path))) return FALSE;
++    base = wcsrchr(path, L'\\');
++    base = base ? base + 1 : path;
++    return !wcsicmp(base, L"Launcher.exe") || !wcsicmp(base, L"LauncherPatcher.exe")
++            || !wcsicmp(base, L"SocialClubHelper.exe");
++}
++
+ static enum wined3d_feature_level feature_level_from_caps(const struct wined3d_gl_info *gl_info,
+         const struct shader_caps *shader_caps, const struct fragment_caps *fragment_caps)
+ {
+@@ -1250,7 +1264,7 @@
+     shader_model = min(shader_model, max(shader_caps->ds_version, 4));
+ 
+     if (gl_info->supported[WINED3D_GL_VERSION_3_2]
+-            && gl_info->supported[ARB_POLYGON_OFFSET_CLAMP]
++            && (gl_info->supported[ARB_POLYGON_OFFSET_CLAMP] || wined3d_rockstar_legacy_feature_levels())
+             && gl_info->supported[ARB_SAMPLER_OBJECTS])
+     {
+         if (shader_model >= 5
+--- a/dlls/wined3d/glsl_shader.c
++++ b/dlls/wined3d/glsl_shader.c
+@@ -11333,7 +11333,8 @@
+     BOOL shader_model_4 = gl_info->glsl_version >= MAKEDWORD_VERSION(1, 50)
+             && gl_info->supported[ARB_SHADER_BIT_ENCODING]
+             && gl_info->supported[ARB_TEXTURE_SWIZZLE]
+-            && gl_info->supported[EXT_SHADER_INTEGER_MIX];
++            /* Port CW HACK 23019 only for the opted-in Rockstar UI. */
++            && (gl_info->supported[EXT_SHADER_INTEGER_MIX] || wined3d_rockstar_legacy_feature_levels());
+ 
+     if (shader_model_4
+             && gl_info->supported[ARB_COMPUTE_SHADER]
+--- a/dlls/wined3d/wined3d_private.h
++++ b/dlls/wined3d/wined3d_private.h
+@@ -5100,4 +5100,7 @@
+ 
+ extern CRITICAL_SECTION wined3d_command_cs;
+ 
++/* GTA-only Rockstar UI compatibility, matching the older shipped Wine behavior. */
++BOOL wined3d_rockstar_legacy_feature_levels(void);
++
+ #endif

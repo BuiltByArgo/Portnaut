@@ -1,0 +1,43 @@
+--- a/dlls/kernelbase/loader.c
++++ b/dlls/kernelbase/loader.c
+@@ -145,6 +145,27 @@
+ }
+ 
+ 
++/* D3DMetal 3 exposes D3D12 directly. GTA also checks that its core module
++ * is loaded after device creation. Keep that module resident for this profile
++ * only, matching the newer renderer's module-loading behavior. */
++static void gta_load_d3d12core( const WCHAR *name, DWORD flags )
++{
++    WCHAR exe[MAX_PATH], enabled[2];
++    const WCHAR *base;
++
++    if (flags & (LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE |
++                 LOAD_LIBRARY_AS_IMAGE_RESOURCE | DONT_RESOLVE_DLL_REFERENCES)) return;
++    base = wcsrchr( name, '\\' );
++    base = base ? base + 1 : name;
++    if (wcsicmp( base, L"d3d12.dll" )) return;
++    if (GetEnvironmentVariableW( L"GTM_ROCKSTAR_SWIFTSHADER", enabled, 2 ) != 1 || enabled[0] != '1') return;
++    if (!GetModuleFileNameW( NULL, exe, MAX_PATH )) return;
++    base = wcsrchr( exe, '\\' );
++    if (wcsicmp( base ? base + 1 : exe, L"GTA5_Enhanced.exe" )) return;
++    if (!GetModuleHandleW( L"d3d12core.dll" ))
++        LoadLibraryExW( L"d3d12core.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 );
++}
++
+ /******************************************************************
+  *      load_library
+  */
+@@ -174,6 +195,12 @@
+         search_flags = flags & load_library_search_flags;
+         if (flags & DONT_RESOLVE_DLL_REFERENCES) load_flags |= LDR_DONT_RESOLVE_REFS;
+         status = LdrLoadDll( (void *)((ULONG_PTR)search_flags | 1), &load_flags, libname, &module );
++        if (!status)
++        {
++            DWORD error = GetLastError();
++            gta_load_d3d12core( libname->Buffer, flags );
++            SetLastError( error );
++        }
+         if (!set_ntstatus( status ))
+         {
+             module = 0;

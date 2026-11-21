@@ -1,0 +1,85 @@
+--- a/dlls/kernelbase/process.c
++++ b/dlls/kernelbase/process.c
+@@ -543,6 +543,82 @@
+         app_name = name;
+     }
+ 
++    /* AoE lab opt-in: keep Steam CEF rendering and networking in its browser
++     * process. Steam's own -cef-single-process flag is not forwarded by all
++     * client versions. No game or other application's command line changes. */
++    {
++        WCHAR enabled[2];
++        const WCHAR *base = wcsrchr( app_name, L'\\' );
++        base = base ? base + 1 : app_name;
++        if (!wcsicmp( base, L"steamwebhelper.exe" ) &&
++            GetEnvironmentVariableW( L"AOELAB_STEAM_SINGLEPROCESS", enabled, 2 ) == 1 &&
++            enabled[0] == L'1' && !wcsstr( tidy_cmdline, L"--type=" ) &&
++            !wcsstr( tidy_cmdline, L"--single-process" ))
++        {
++            static const WCHAR extra[] = L" --disable-gpu --single-process";
++            SIZE_T length = wcslen( tidy_cmdline ) + ARRAY_SIZE(extra);
++            WCHAR *modified = HeapAlloc( GetProcessHeap(), 0, length * sizeof(WCHAR) );
++            if (!modified)
++            {
++                status = STATUS_NO_MEMORY;
++                goto done;
++            }
++            wcscpy( modified, tidy_cmdline );
++            wcscat( modified, extra );
++            if (tidy_cmdline != cmd_line) HeapFree( GetProcessHeap(), 0, tidy_cmdline );
++            tidy_cmdline = modified;
++            TRACE( "Applied opt-in Steam CEF single-process workaround.\n" );
++        }
++    }
++
++    /* GTA package opt-in: render Steam and Rockstar CEF UI through their bundled
++     * SwiftShader implementation. Keep the game renderer unchanged. */
++    {
++        WCHAR enabled[2];
++        static const WCHAR extra[] = L" --in-process-gpu --use-gl=angle --use-angle=swiftshader";
++        static const WCHAR steam_extra[] = L" --no-sandbox --disable-stack-profiler";
++        const WCHAR *existing = wcsstr( tidy_cmdline, extra );
++        const WCHAR *base = wcsrchr( app_name, L'\\' );
++        base = base ? base + 1 : app_name;
++        if ((!wcsicmp( base, L"SocialClubHelper.exe" ) ||
++             !wcsicmp( base, L"steamwebhelper.exe" )) &&
++            GetEnvironmentVariableW( L"GTM_ROCKSTAR_SWIFTSHADER", enabled, 2 ) == 1 &&
++            enabled[0] == L'1' &&
++            (!existing || (existing[ARRAY_SIZE(extra) - 1] &&
++                           existing[ARRAY_SIZE(extra) - 1] != L' ' &&
++                           existing[ARRAY_SIZE(extra) - 1] != L'\t')) )
++        {
++            SIZE_T length = wcslen( tidy_cmdline ) + ARRAY_SIZE(extra);
++            if (!wcsicmp( base, L"steamwebhelper.exe" )) length += ARRAY_SIZE(steam_extra);
++            WCHAR *modified = HeapAlloc( GetProcessHeap(), 0, length * sizeof(WCHAR) );
++            if (!modified)
++            {
++                status = STATUS_NO_MEMORY;
++                goto done;
++            }
++            wcscpy( modified, tidy_cmdline );
++            wcscat( modified, extra );
++            if (!wcsicmp( base, L"steamwebhelper.exe" ))
++            {
++                wcscat( modified, steam_extra );
++                /* SwiftShader supplies GL; --disable-gpu otherwise selects no GL.
++                 * Keep --disable-gpu-compositing and every unrelated argument. */
++                WCHAR *flag = modified;
++                while ((flag = wcsstr( flag, L"--disable-gpu" )))
++                {
++                    WCHAR *end = flag + wcslen( L"--disable-gpu" );
++                    if ((flag == modified || flag[-1] == L' ' || flag[-1] == L'\t') &&
++                        (!*end || *end == L' ' || *end == L'\t'))
++                        memmove( flag, end, (wcslen(end) + 1) * sizeof(WCHAR) );
++                    else flag = end;
++                }
++            }
++            if (tidy_cmdline != cmd_line) HeapFree( GetProcessHeap(), 0, tidy_cmdline );
++            tidy_cmdline = modified;
++        }
++    }
++
++
+     /* Warn if unsupported features are used */
+ 
+     if (flags & (IDLE_PRIORITY_CLASS | HIGH_PRIORITY_CLASS | REALTIME_PRIORITY_CLASS |

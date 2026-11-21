@@ -1,0 +1,148 @@
+# Builds the GTA V Enhanced Wine engine (engines/gta5-wine/README.md) and publishes it with its
+# source as a release tagged gta5-wine-11.13-<commit>-r<run number>, one per run.
+name: build-gta5-wine
+on:
+  push:
+    branches: [gta5-wine-engine]
+    paths:
+      - "engines/gta5-wine/**"
+      - ".github/workflows/build-gta5-wine.yml"
+  workflow_dispatch:
+permissions:
+  contents: write # the release step creates a release and uploads its files
+jobs:
+  build:
+    # Intel runner: the patched Mac driver's D3DMetal layer is x86_64 code, and the engine runs
+    # under Rosetta 2 on Apple silicon, as MacGames' engine does.
+    runs-on: macos-15-intel
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "14.0" # Portnaut's minimum (Package.swift)
+      WINE_VERSION: "11.13"
+    steps:
+      - uses: actions/checkout@v4
+      - name: pinned source
+        run: |
+          set -euo pipefail
+          curl -sSfL -o "$RUNNER_TEMP/wine-$WINE_VERSION.tar.xz" "https://dl.winehq.org/wine/source/11.x/wine-$WINE_VERSION.tar.xz"
+          (cd "$RUNNER_TEMP" && shasum -a 256 -c "$GITHUB_WORKSPACE/engines/gta5-wine/source.sha256")
+          mkdir -p "$RUNNER_TEMP/src"
+          tar -xJf "$RUNNER_TEMP/wine-$WINE_VERSION.tar.xz" -C "$RUNNER_TEMP/src"
+      - name: patches
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/src/wine-$WINE_VERSION"
+          for p in "$GITHUB_WORKSPACE"/engines/gta5-wine/patches/*.patch; do
+            echo "applying $(basename "$p")"
+            patch -p1 --forward < "$p"
+          done
+      - name: toolchain
+        run: |
+          set -euo pipefail
+          brew install -q mingw-w64 bison pkg-config ccache gnutls freetype sdl2 molten-vk
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+          x86_64-w64-mingw32-gcc --version | sed -n 1p
+          i686-w64-mingw32-gcc --version | sed -n 1p
+      - name: ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/ccache
+          key: ccache-gta5-wine-${{ hashFiles('engines/gta5-wine/**') }}
+          restore-keys: ccache-gta5-wine-
+      # The 32-bit PE side is built for SSE2 maths, as Windows' own DLLs are; Rosetta runs x87 code
+      # slowly. GStreamer and FFmpeg are left out, as in MacGames' engine (no winegstreamer.so, and
+      # winedmo.so links no FFmpeg).
+      - name: configure and build
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/build" && cd "$RUNNER_TEMP/build"
+          "../src/wine-$WINE_VERSION/configure" \
+            --prefix="$RUNNER_TEMP/out/engine" \
+            --enable-archs=i386,x86_64 \
+            --with-mingw \
+            --without-alsa --without-capi --with-coreaudio --without-cups --without-dbus \
+            --without-ffmpeg --without-fontconfig --with-freetype --with-gnutls --without-gphoto \
+            --without-gstreamer --without-inotify --without-krb5 --without-netapi --without-oss \
+            --without-pulse --without-sane --with-sdl --without-udev --without-usb --without-v4l2 \
+            --without-x \
+            --disable-tests \
+            CC="ccache clang" CXX="ccache clang++" \
+            i386_CC="ccache i686-w64-mingw32-gcc" x86_64_CC="ccache x86_64-w64-mingw32-gcc" \
+            i386_CFLAGS="-g -O2 -msse2 -mfpmath=sse -mincoming-stack-boundary=2"
+          make -j"$(sysctl -n hw.ncpu)"
+          make install-lib
+      # The same objects as the build's d3d11, dxgi and d3d10core, linked once more without
+      # -Wl,--wine-builtin, the flag tools/makedep.c gives every PE module and for which winegcc
+      # runs winebuild --builtin. Each link command comes from make's own rule for the module
+      # (make -n -B prints it without running it); makedep wraps long recipe lines with a
+      # backslash, so continuation lines are joined before the link line is picked.
+      - name: launcher WineD3D
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/build"
+          out="$RUNNER_TEMP/out/launcher-wined3d"
+          mkdir -p "$out"
+          for m in d3d11 dxgi d3d10core; do
+            target="dlls/$m/x86_64-windows/$m.dll"
+            make -n -B "$target" | sed -e :a -e '/\\$/N; s/\\\n//; ta' | grep -F -- "-o $target" > link.sh
+            test "$(wc -l < link.sh)" -eq 1
+            test "$(grep -oF -- " -Wl,--wine-builtin" link.sh | wc -l)" -eq 1
+            sed -e "s# -Wl,--wine-builtin##" -e "s#-o $target#-o $out/$m.dll#" link.sh > link-native.sh
+            sh -e link-native.sh
+            if LC_ALL=C grep -q "Wine builtin DLL" "$out/$m.dll"; then echo "$m.dll still carries the builtin mark"; exit 1; fi
+          done
+          x86_64-w64-mingw32-objdump -p "$out/d3d11.dll" | grep -E "DLL Name: wined3d\.dll"
+          x86_64-w64-mingw32-objdump -p "$out/d3d11.dll" | grep -E "DLL Name: dxgi\.dll"
+          x86_64-w64-mingw32-objdump -p "$out/dxgi.dll" | grep -E "DLL Name: wined3d\.dll"
+          x86_64-w64-mingw32-objdump -p "$out/d3d10core.dll" | grep -E "DLL Name: d3d11\.dll"
+      - name: engine layout
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/out"
+          find engine/lib/wine/x86_64-windows engine/lib/wine/i386-windows launcher-wined3d -type f \
+            \( -name '*.dll' -o -name '*.exe' -o -name '*.sys' -o -name '*.drv' -o -name '*.cpl' \
+               -o -name '*.ocx' -o -name '*.acm' -o -name '*.tlb' \) -print0 \
+            | xargs -0 -n 50 x86_64-w64-mingw32-strip --strip-debug
+          find engine/lib/wine/x86_64-unix -name '*.so' -type f -print0 | xargs -0 -n 50 strip -x -S
+          strip -x -S engine/bin/wine engine/bin/wineserver
+          # No Homebrew paths in the Unix side: a library linked by its Homebrew path becomes an
+          # @rpath name, resolved through DYLD_FALLBACK_LIBRARY_PATH like the libraries Wine opens.
+          find engine/lib/wine/x86_64-unix engine/bin -type f | while read -r f; do
+            for ref in $(otool -L "$f" | tail -n +2 | awk '{print $1}' | grep -E '^/(usr/local|opt/homebrew)/' || true); do
+              install_name_tool -change "$ref" "@rpath/$(basename "$ref")" "$f"
+            done
+            for rp in $(otool -l "$f" | awk '/LC_RPATH/ {getline; getline; print $2}' | grep -E '^/(usr/local|opt/homebrew)/' || true); do
+              install_name_tool -delete_rpath "$rp" "$f"
+            done
+          done
+          left=$(find engine/lib/wine/x86_64-unix engine/bin -type f -print0 \
+            | xargs -0 otool -l 2>/dev/null | grep -E '^ +(name|path) /(usr/local|opt/homebrew)/' || true)
+          if [ -n "$left" ]; then echo "Homebrew paths left in the engine:"; echo "$left"; exit 1; fi
+          engine/bin/wine --version
+          test "$(engine/bin/wine --version)" = "wine-$WINE_VERSION"
+          for d in engine/lib/wine/x86_64-unix engine/lib/wine/x86_64-windows engine/lib/wine/i386-windows engine/share/wine; do test -d "$d"; done
+          cp "$GITHUB_WORKSPACE/engines/gta5-wine/README.md" "$GITHUB_WORKSPACE/engines/gta5-wine/Wine-LGPL-2.1.txt" .
+          name="gta5-wine-$WINE_VERSION-${GITHUB_SHA::12}-r$GITHUB_RUN_NUMBER"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+          tar -cJf "$RUNNER_TEMP/$name.tar.xz" README.md Wine-LGPL-2.1.txt engine launcher-wined3d
+          tar -C "$GITHUB_WORKSPACE/engines/gta5-wine" -czf "$RUNNER_TEMP/$name-patches.tar.gz" patches
+          cd "$RUNNER_TEMP"
+          shasum -a 256 "$name.tar.xz" "$name-patches.tar.gz" "wine-$WINE_VERSION.tar.xz" | tee SHA256SUMS
+          ls -la "$name.tar.xz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gta5-wine
+          path: |
+            ${{ runner.temp }}/${{ env.NAME }}.tar.xz
+            ${{ runner.temp }}/${{ env.NAME }}-patches.tar.gz
+            ${{ runner.temp }}/wine-${{ env.WINE_VERSION }}.tar.xz
+            ${{ runner.temp }}/SHA256SUMS
+          retention-days: 14
+      - name: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          gh release create "$NAME" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$NAME" \
+            --notes "Wine $WINE_VERSION from WineHQ's source with the patches in engines/gta5-wine/patches, for Portnaut's GTA V Enhanced engine profile. Built by run $GITHUB_RUN_ID from $GITHUB_SHA. The source tarball and the patches are attached; checksums in SHA256SUMS. LGPL 2.1 or later." \
+            "$NAME.tar.xz" "$NAME-patches.tar.gz" "wine-$WINE_VERSION.tar.xz" SHA256SUMS
