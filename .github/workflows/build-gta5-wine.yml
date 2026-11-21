@@ -70,11 +70,8 @@ jobs:
             i386_CFLAGS="-g -O2 -msse2 -mfpmath=sse -mincoming-stack-boundary=2"
           make -j"$(sysctl -n hw.ncpu)"
           make install-lib
-      # The same objects as the build's d3d11, dxgi and d3d10core, linked once more without
-      # -Wl,--wine-builtin, the flag tools/makedep.c gives every PE module and for which winegcc
-      # runs winebuild --builtin. Each link command comes from make's own rule for the module
-      # (make -n -B prints it without running it); makedep wraps long recipe lines with a
-      # backslash, so continuation lines are joined before the link line is picked.
+      # wine-native-copy.patch links d3d11, dxgi and d3d10core once more without Wine's builtin mark,
+      # as <module>-native.dll in the build tree (README.md says why); they go out under their own names.
       - name: launcher WineD3D
         run: |
           set -euo pipefail
@@ -82,18 +79,13 @@ jobs:
           out="$RUNNER_TEMP/out/launcher-wined3d"
           mkdir -p "$out"
           for m in d3d11 dxgi d3d10core; do
-            target="dlls/$m/x86_64-windows/$m.dll"
-            make -n -B "$target" | sed -e :a -e '/\\$/N; s/\\\n//; ta' | grep -F -- "-o $target" > link.sh
-            test "$(wc -l < link.sh)" -eq 1
-            test "$(grep -oF -- " -Wl,--wine-builtin" link.sh | wc -l)" -eq 1
-            sed -e "s# -Wl,--wine-builtin##" -e "s#-o $target#-o $out/$m.dll#" link.sh > link-native.sh
-            sh -e link-native.sh
-            if LC_ALL=C grep -q "Wine builtin DLL" "$out/$m.dll"; then echo "$m.dll still carries the builtin mark"; exit 1; fi
+            cp "dlls/$m/x86_64-windows/$m-native.dll" "$out/$m.dll"
+            if LC_ALL=C grep -q "Wine builtin DLL" "$out/$m.dll"; then echo "$m.dll carries the builtin mark"; exit 1; fi
           done
           x86_64-w64-mingw32-objdump -p "$out/d3d11.dll" | grep -E "DLL Name: wined3d\.dll"
           x86_64-w64-mingw32-objdump -p "$out/d3d11.dll" | grep -E "DLL Name: dxgi\.dll"
           x86_64-w64-mingw32-objdump -p "$out/dxgi.dll" | grep -E "DLL Name: wined3d\.dll"
-          x86_64-w64-mingw32-objdump -p "$out/d3d10core.dll" | grep -E "DLL Name: d3d11\.dll"
+          x86_64-w64-mingw32-objdump -p "$out/d3d10core.dll" | grep -E "DLL Name: dxgi\.dll"
       - name: engine layout
         run: |
           set -euo pipefail

@@ -14,7 +14,10 @@ published in this fork's releases.
   seven patches of MacGames' `gta5` pack (`Sources/patches/` in
   `macgames-pack-gta5.tar.xz`, https://github.com/tarikbc/macgames/releases/tag/packs-1,
   SHA-256 bc8d15d5ad6713e6a192de6d78e0534a2925db886d7a9225efdf52c25fcc7499),
-  unchanged. Like Wine, they are under the GNU LGPL 2.1 or later (`Wine-LGPL-2.1.txt`).
+  unchanged, and `wine-native-copy.patch`, this fork's own: `tools/makedep` links a module
+  whose `Makefile.in` sets `NATIVECOPY` once more without Wine's builtin mark, as
+  `<module>-native.dll` beside it (set for d3d11, dxgi and d3d10core). Like Wine, the patches
+  are under the GNU LGPL 2.1 or later (`Wine-LGPL-2.1.txt`).
   The `rockstar` pack's `rockstar-cef.patch` is not applied: `kernelbase-cef.patch`
   already carries its Rockstar block.
 
@@ -24,8 +27,8 @@ published in this fork's releases.
   x86_64 (it runs under Rosetta 2 on Apple silicon). The Unix side loads its libraries
   (FreeType, GnuTLS, MoltenVK and others) at run time from the path the caller sets,
   as MacGames' engine does; none are bundled.
-- `launcher-wined3d/`: Wine's own `d3d11.dll`, `dxgi.dll` and `d3d10core.dll` from the
-  same build, linked without Wine's builtin mark. They go into a prefix's `system32`
+- `launcher-wined3d/`: Wine's own x86_64 `d3d11.dll`, `dxgi.dll` and `d3d10core.dll` from
+  the same build, linked without Wine's builtin mark (`wine-native-copy.patch`). They go into a prefix's `system32`
   for the Rockstar Games Launcher and Social Club, which do not start on D3DMetal: Wine
   replaces a marked file found there with the builtin first in `WINEDLLPATH`
   (`load_builtin` in `dlls/ntdll/unix/loader.c`), which is D3DMetal's.
