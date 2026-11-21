@@ -110,6 +110,7 @@ struct AboutPage: View {
                     .font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
                 Link("Email Support ↗", destination: Publisher.supportMail).font(.system(size: 13))
             }.card(padding: 18)
+            UpdatesCard(updater: model.appUpdater)
             Text("Built around Wine with DXMT, D3DMetal and DXVK renderers, with each launcher or game in a bottle of its own. Portnaut is free, open-source software under the MIT licence. It is an independent project, not affiliated with or endorsed by Apple, Ubisoft, Valve, Electronic Arts, Epic Games, Blizzard Entertainment, Rockstar Games, GOG, Amazon, CodeWeavers, Highball or Sikarugir.")
                 .font(.system(size: 14)).foregroundStyle(Palette.muted).lineSpacing(5)
             VStack(alignment: .leading, spacing: 12) {

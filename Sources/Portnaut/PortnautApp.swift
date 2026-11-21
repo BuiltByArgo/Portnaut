@@ -24,6 +24,7 @@ struct PortnautApp: App {
                     .keyboardShortcut("t", modifiers: [.command, .shift])
             }
             CommandGroup(after: .appInfo) {
+                CheckForPortnautUpdatesButton(updater: model.appUpdater)
                 Button("Check for Component Updates…") { model.openComponentUpdates() }.disabled(!model.runtimeReady)
                 Divider()
                 Button("Open Portnaut Data Folder") { model.reveal(model.service.paths.root) }
@@ -34,11 +35,14 @@ struct PortnautApp: App {
                 Button("Export Diagnostics…") { model.exportDiagnostics() }
             }
         }
+        // Portnaut › Settings… (⌘,).
+        Settings { SettingsView().environmentObject(model) }
     }
 }
 
 struct PortnautView: View {
     @EnvironmentObject var model: AppModel
+    @Environment(\.openSettings) private var openSettings
     var body: some View {
         HStack(spacing: 0) {
             sidebar.frame(width: 208)
@@ -61,7 +65,7 @@ struct PortnautView: View {
                         Button { model.chooseInstaller() } label: { Label("Install from File…", systemImage: "square.and.arrow.down.on.square").frame(height: 28) }
                             .buttonStyle(PortnautButtonStyle(primary: false)).disabled(model.busy).padding(.trailing, 14)
                     }
-                    Text("EARLY ACCESS  /  \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                    Text("PUBLIC BETA  /  \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
                         .font(.system(size: 10, weight: .medium, design: .monospaced)).tracking(1.5).foregroundStyle(Palette.muted)
                 }.padding(.horizontal, 30).frame(height: 68)
                 Rectangle().fill(Palette.line).frame(height: 1)
@@ -94,6 +98,16 @@ struct PortnautView: View {
         } message: { Text(model.error ?? "") }
         .sheet(isPresented: $model.showingNewBottle) { NewBottleSheet().environmentObject(model) }
         .background(EmptyView().sheet(isPresented: $model.showingWillItRun) { WillItRunSheet().environmentObject(model) })
+        .alert("Portnaut was updated to \(model.updatedTo ?? "")", isPresented: Binding(get: { model.updatedTo != nil }, set: { if !$0 { model.updatedTo = nil } })) {
+            Button("What’s New") {
+                if let version = model.updatedTo, let url = URL(string: "https://github.com/BuiltByArgo/Portnaut/releases/tag/\(version)") { NSWorkspace.shared.open(url) }
+                model.updatedTo = nil
+            }
+            Button("OK", role: .cancel) { model.updatedTo = nil }
+        } message: { Text("Your bottles, games and settings are as you left them.") }
+        .alert("Updating Portnaut", isPresented: $model.installingUpdate) {
+            Button("OK", role: .cancel) {}
+        } message: { Text("Your games have closed, so Portnaut is installing its update now. It closes and reopens by itself in a few seconds.") }
         .alert("This game won’t run", isPresented: Binding(get: { model.downloadWarning != nil }, set: { if !$0 { model.downloadWarning = nil } })) {
             Button("OK", role: .cancel) { model.downloadWarning = nil }
         } message: { Text(model.downloadWarning ?? "") }
@@ -116,6 +130,8 @@ struct PortnautView: View {
             return model.beginInstall(file)
         }
         .task {
+            // Launch argument for checking the window: -PortnautShowSettings YES
+            if UserDefaults.standard.bool(forKey: "PortnautShowSettings") { openSettings() }
             while !Task.isCancelled {
                 model.refresh()
                 try? await Task.sleep(for: .seconds(3))
@@ -157,6 +173,7 @@ struct PortnautView: View {
                 Text("Native on your Mac.").font(.system(size: 12, weight: .medium))
                 Text("Windows games,\ncleared for launch.").font(.system(size: 11)).foregroundStyle(Palette.muted).lineSpacing(4)
             }.padding(24)
+            SidebarUpdateButton(updater: model.appUpdater)
             Rectangle().fill(Palette.line).frame(height: 1).padding(.horizontal, 20)
             nav(.about, icon: "info.circle").padding(.vertical, 15)
         }.background(Palette.sidebar)

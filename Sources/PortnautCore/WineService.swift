@@ -380,11 +380,14 @@ public final class WineService: @unchecked Sendable {
 
     // MARK: - Bottles
 
-    public func createBottle(name: String, launcher: Launcher?, renderer: Renderer, windowsVersion: WindowsVersion = .win10, easyMode: Bool = true) async throws -> Bottle {
+    /// A nil Windows version takes the one from Settings; new bottles record performance as Settings says.
+    public func createBottle(name: String, launcher: Launcher?, renderer: Renderer, windowsVersion: WindowsVersion? = nil, easyMode: Bool = true) async throws -> Bottle {
         guard paths.runtimeReady else { throw PortnautError("Prepare Portnaut first.") }
         var library = try paths.loadLibrary()
         var bottle = Bottle(id: library.newBottleID(for: name), name: name, launcher: launcher, renderer: renderer)
-        bottle.windowsVersion = windowsVersion
+        let settings = self.settings
+        bottle.windowsVersion = windowsVersion ?? settings.newBottleWindowsVersion
+        bottle.options.recordPerformance = settings.recordPerformanceInNewBottles
         bottle.easyMode = easyMode
         bottle.autoBackupSaves = easyMode
         bottle.createdAt = Date()
@@ -616,10 +619,7 @@ public final class WineService: @unchecked Sendable {
             return CompatibilityReport(id: known.id, title: known.title, status: .tested, renderer: known.recommendation.renderer, notes: known.recommendation.reason)
         }
         guard let database else { return nil }
-        let steamID = bottle.launcher == .steam ? game.launcherArguments.flatMap { arguments in
-            arguments.firstIndex(of: "-applaunch").flatMap { arguments.indices.contains($0 + 1) ? Int(arguments[$0 + 1]) : nil }
-        } : nil
-        return database.report(steamAppID: steamID, title: game.name)
+        return database.report(steamAppID: bottle.launcher == .steam ? game.steamAppID : nil, title: game.name)
     }
 
     /// The renderer an easy-mode bottle switches to for a game: the one measured fastest on this Mac,

@@ -1221,7 +1221,9 @@ final class CoreTests {
         let argument = "space and ' quote; $(this must stay literal)"
         try await ProcessRunner.run(URL(fileURLWithPath: "/usr/bin/printf"), ["%s", argument], log: log)
         let content = try String(contentsOf: log, encoding: .utf8)
-        #expect(content.hasSuffix(argument))
+        // The program's output, then the line saying how it ended.
+        #expect(content.contains("\n" + argument + "\n["))
+        #expect(content.hasSuffix("exited with code 0 after 0 seconds\n"))
         do {
             try await ProcessRunner.run(URL(fileURLWithPath: "/usr/bin/false"), [], log: log)
             Issue.record("A failing process must throw")

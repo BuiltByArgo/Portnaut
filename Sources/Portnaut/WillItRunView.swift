@@ -27,7 +27,7 @@ extension CompatibilityReport {
     var symbol: String {
         switch status {
         case .blocked: "xmark.octagon"
-        case .unlikely: "exclamationmark.triangle"
+        case .unlikely, .problems: "exclamationmark.triangle"
         case .maybe: "questionmark.circle"
         case .likely: "chart.line.uptrend.xyaxis"
         case .reported: "person.2"
@@ -36,7 +36,7 @@ extension CompatibilityReport {
     }
     var tint: Color {
         switch status {
-        case .blocked, .unlikely: Palette.accent
+        case .blocked, .unlikely, .problems: Palette.accent
         case .maybe: Palette.muted
         case .likely, .reported, .tested: Palette.cyan
         }
@@ -61,15 +61,40 @@ struct WillItRunSheet: View {
                     } else if model.willItRunQuery.trimmingCharacters(in: .whitespaces).count >= 2 && results.isEmpty {
                         Text("No reports for “\(model.willItRunQuery)” yet. Most games without anti-cheat are worth a try.").font(.system(size: 12)).foregroundStyle(Palette.muted)
                     }
-                    ForEach(results) { CompatibilityRow(report: $0, showTitle: true) }
+                    ForEach(results) { report in
+                        HStack(alignment: .top, spacing: 10) {
+                            CompatibilityRow(report: report, showTitle: true)
+                            // Games that can't run get no shortcut to installing them.
+                            if report.status != .blocked { setUpMenu(report) }
+                        }
+                    }
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 4)
             }.frame(height: 360)
-            Text("From Highball’s compatibility database (CC0), with anti-cheat data from Are We Anti-Cheat Yet? (MIT) and predictions from ProtonDB’s Linux reports (ODbL). Portnaut checks it on your Mac; it never sends what you search or play.")
+            Text("From Highball’s compatibility database (CC0), with anti-cheat data from Are We Anti-Cheat Yet? (MIT) and predictions from ProtonDB’s Linux reports (ODbL). Portnaut checks it on your Mac and never sends what you search.")
                 .font(.system(size: 10)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
                 Button("Done") { dismiss() }.keyboardShortcut(.defaultAction)
             }
-        }.padding(26).frame(width: 560).background(Palette.background)
+        }.padding(26).frame(width: 600).background(Palette.background)
+    }
+
+    /// Steam first, then the stores most Windows games come from.
+    static let stores: [Launcher] = [.steam, .epic, .gog, .ea, .ubisoft, .battlenet, .rockstar, .amazon]
+
+    private func setUpMenu(_ report: CompatibilityReport) -> some View {
+        Menu {
+            Section("Where do you have it?") {
+                ForEach(Self.stores) { store in
+                    let existing = model.library.bottles.first { $0.launcher == store && model.ready($0) }
+                    Button(existing.map { "\(store.title) (in \($0.name))" } ?? store.title) { model.setUp(report, from: store) }
+                }
+            }
+        } label: {
+            Text("Set Up").font(.system(size: 12, weight: .semibold))
+        }
+        .menuStyle(.borderlessButton).fixedSize()
+        .disabled(!model.runtimeReady || model.busy)
+        .help(model.runtimeReady ? "Make a bottle for the store you have it in, and install that store’s app" : "Prepare Portnaut first, in the Library")
     }
 }

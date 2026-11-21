@@ -63,6 +63,23 @@ struct LibraryPage: View {
 }
 
 /// The selected or most recently played game, large.
+/// A Steam game's cover art when Portnaut has it (Settings › Cover art), else Portnaut's own scenery.
+struct GameArtwork: View {
+    @EnvironmentObject var model: AppModel
+    var entry: LibraryEntry
+    var kind: CoverArt.Kind
+    var body: some View {
+        if let image = model.coverArt["\(entry.id)#\(kind.rawValue)"] ?? model.coverArt["\(entry.id)#\(CoverArt.Kind.card.rawValue)"] {
+            // Fills the space it is given without changing the layout around it.
+            Color.clear.overlay(Image(nsImage: image).resizable().scaledToFill()).clipped()
+        } else if entry.game.id == KnownGame.ac3.id {
+            FrontierScene()
+        } else {
+            SpaceScene(seed: entry.game.name)
+        }
+    }
+}
+
 struct FeaturedGame: View {
     @EnvironmentObject var model: AppModel
     var entry: LibraryEntry
@@ -71,7 +88,7 @@ struct FeaturedGame: View {
         let running = model.sessionActive(entry.bottle)
         VStack(alignment: .leading, spacing: 18) {
             ZStack(alignment: .leading) {
-                if entry.game.id == KnownGame.ac3.id { FrontierScene() } else { SpaceScene(seed: entry.game.name) }
+                GameArtwork(entry: entry, kind: .hero)
                 LinearGradient(colors: [Palette.background.opacity(0.96), Palette.background.opacity(0.45), .clear], startPoint: .leading, endPoint: .trailing)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 7) {
@@ -140,7 +157,7 @@ struct GameCard: View {
         Button { model.selectedEntryID = entry.id } label: {
             VStack(alignment: .leading, spacing: 10) {
                 ZStack(alignment: .bottomLeading) {
-                    if entry.game.id == KnownGame.ac3.id { FrontierScene() } else { SpaceScene(seed: entry.game.name) }
+                    GameArtwork(entry: entry, kind: .card)
                     LinearGradient(colors: [.clear, Palette.background.opacity(0.85)], startPoint: .top, endPoint: .bottom)
                     Text(entry.game.name).font(.system(size: 16, weight: .semibold, design: .rounded)).lineLimit(2).padding(12)
                 }.frame(height: 110).clipShape(RoundedRectangle(cornerRadius: 9))
@@ -149,6 +166,7 @@ struct GameCard: View {
                     Spacer()
                     if let report = model.reports[entry.id] {
                         if report.status == .blocked { Tag(text: "Won’t run", tint: Palette.accent) }
+                        else if report.status == .problems { Tag(text: "Problems reported", tint: Palette.accent) }
                         else if !report.antiCheat.isEmpty { Tag(text: "Anti-cheat", tint: Palette.accent) }
                     }
                     RendererBadge(current: entry.bottle.renderer, recommended: analysis?.recommendation)

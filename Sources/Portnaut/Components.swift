@@ -43,6 +43,16 @@ struct Tag: View {
     }
 }
 
+/// Under a Windows version picker when Windows 7 or 8.1 is chosen.
+struct OldWindowsNote: View {
+    var version: WindowsVersion?
+    var body: some View {
+        if let version, version.isOld {
+            Text(WindowsVersion.oldVersionNote).font(.system(size: 11)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 struct SectionTitle: View {
     var title: String
     var symbol: String

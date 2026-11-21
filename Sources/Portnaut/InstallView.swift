@@ -54,6 +54,7 @@ struct InstallSheet: View {
                     if let note = draft.renderer.licenseNote { Text(note).font(.system(size: 11)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true) }
                 }
                 Picker("Windows version", selection: $draft.windows) { ForEach(WindowsVersion.allCases) { Text($0.title).tag($0) } }.frame(maxWidth: 300)
+                OldWindowsNote(version: draft.windows)
             } else if let chosen {
                 Text("\(chosen.name) uses \(chosen.renderer.title)\(model.sessionActive(chosen) ? " and is running; the installer runs alongside its programs" : "").")
                     .font(.system(size: 11)).foregroundStyle(Palette.muted)
@@ -69,6 +70,7 @@ struct InstallSheet: View {
                 }.keyboardShortcut(.defaultAction).disabled(model.busy || (creating ? name.isEmpty : chosen == nil))
             }
         }.padding(26).frame(width: 540).background(Palette.background)
+        .onAppear { draft.windows = model.settings.newBottleWindowsVersion }
     }
 }
 

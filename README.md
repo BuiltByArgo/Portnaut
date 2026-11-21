@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <img alt="Version 0.12.0" src="https://img.shields.io/badge/version-0.12.0-FF8A3D">
+  <img alt="Version 0.13.0" src="https://img.shields.io/badge/version-0.13.0-FF8A3D">
   <img alt="macOS 14.6 or later" src="https://img.shields.io/badge/macOS-14.6%2B-141B3A">
   <img alt="Apple silicon" src="https://img.shields.io/badge/Apple%20silicon-M1%20or%20later-141B3A">
   <img alt="Free, MIT licence" src="https://img.shields.io/badge/licence-MIT-141B3A">
 </p>
 
 <p align="center">
-  <a href="https://github.com/BuiltByArgo/Portnaut/releases/latest"><img alt="Download Portnaut 0.12.0" src="https://img.shields.io/badge/Download%20Portnaut-0.12.0-FF8A3D?style=for-the-badge"></a>
+  <a href="https://github.com/BuiltByArgo/Portnaut/releases/latest"><img alt="Download Portnaut 0.13.0" src="https://img.shields.io/badge/Download%20Portnaut-0.13.0-FF8A3D?style=for-the-badge"></a>
   <a href="https://ko-fi.com/A2H229BWWV"><img alt="Support Portnaut on Ko-fi" src="https://img.shields.io/badge/Support%20Portnaut-Ko--fi-72A4F2?style=for-the-badge&logo=kofi&logoColor=white"></a>
   <a href="https://portnaut.com"><img alt="Portnaut's website" src="https://img.shields.io/badge/Website-portnaut.com-141B3A?style=for-the-badge"></a>
 </p>
@@ -55,7 +55,9 @@ files suggest) and backs up your saves first. Advanced settings stay one click a
 Check a game before you buy or download it: about 13,000 games with Mac reports, anti-cheat and Linux
 players' results, from Highball's open compatibility database. Every game in your library shows its
 verdict, and Portnaut warns you when Steam starts downloading a game that can't run, before the
-download finishes. The check happens on your Mac; nothing about what you play is sent anywhere.
+download finishes. Found a game? **Set Up** asks where you have it, then makes that store's bottle
+and installs the store for you. The check happens on your Mac; nothing about what you search is sent
+anywhere.
 
 ### Find My Best Setup
 
@@ -85,9 +87,12 @@ back up your game saves to your Documents folder before every game, keeping the 
   <img src="docs/screenshots/snapshots.png" width="880" alt="A bottle's snapshots and save backups">
 </p>
 
-### Components that stay current
+### Updates, inside the app
 
-Wine and the renderers update from inside the app, with a snapshot first and a way back.
+Portnaut updates itself: **Check for Updates** in the sidebar finds a new release here and installs it
+in one click, or Portnaut can check once a day if you allow it. Updates are signed by Built by Argo and
+checked before they install, and an update waits until your games have closed. Wine and the renderers
+update from inside the app too, with a snapshot first and a way back.
 
 <p align="center">
   <img src="docs/screenshots/component-updates.png" width="880" alt="Component Updates: installed and available versions of Wine, DXMT, D3DMetal, DXVK and MoltenVK">
@@ -102,6 +107,8 @@ Wine and the renderers update from inside the app, with a snapshot first and a w
 - **Windows components:** Visual C++ runtimes, .NET Desktop Runtime 8 and the DirectX 9–11 helper
   libraries, from Microsoft.
 - **Performance records:** frame rate, lows and GPU time for every session, to compare renderers.
+- **Settings** (⌘,): the Windows version new bottles start with, performance recording for every bottle, and cover art.
+- **Cover art** for Steam games in the library and Couch Mode, from the copies Steam keeps on your Mac.
 - **Experimental:** MetalFX upscaling, and DLSS through MetalFX for games that offer DLSS.
 
 Tested most with Assassin's Creed III Remastered through Ubisoft Connect: missions play at about
@@ -159,9 +166,13 @@ installs it unmodified.
 No account, no analytics, no tracking. Portnaut connects to the internet only:
 - for the downloads above
 - when you open Component Updates, to ask GitHub what's new and to fetch the newest compatibility list
+- when you check for Portnaut updates, or once a day if you allow it, to ask this GitHub page whether a
+  newer Portnaut exists (nothing about your Mac is sent)
+- only if you turn it on in Settings, to download missing cover art for your Steam games from Steam's
+  image server
 
 Will It Run? and every game's verdict are worked out on your Mac from that list: Portnaut never sends
-what you search for or play.
+what you search for.
 
 Its logs stay on your Mac. A diagnostics report is a file you choose to save and send.
 
@@ -192,7 +203,9 @@ open build/Portnaut.app
 ```
 
 `bash scripts/package-release.sh` builds the app and writes `Portnaut-<version>.zip` and its SHA-256
-to `release-assets/`. `bash scripts/update-compatibility.sh` refreshes the compatibility list in
+to `release-assets/`; `bash scripts/make-appcast.sh` signs it with the update key and writes
+`appcast.xml`, which goes on the release beside the zip. Portnaut's own updates use
+[Sparkle](https://sparkle-project.org), which Swift Package Manager fetches when you build. `bash scripts/update-compatibility.sh` refreshes the compatibility list in
 `Compatibility/`, which the build copies into the app.
 
 | Folder | What's in it |

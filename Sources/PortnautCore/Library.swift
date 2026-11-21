@@ -274,6 +274,11 @@ public struct ControllerSettings: Codable, Equatable, Sendable {
 }
 
 public struct Game: Codable, Equatable, Sendable, Identifiable {
+    /// A Steam game's app id, from the -applaunch argument Steam games start with.
+    public var steamAppID: Int? {
+        guard let arguments = launcherArguments, let index = arguments.firstIndex(of: "-applaunch"), arguments.indices.contains(index + 1) else { return nil }
+        return Int(arguments[index + 1])
+    }
     public var id: String
     public var name: String
     /// Always relative to the bottle's drive_c. Never an external executable.

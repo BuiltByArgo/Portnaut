@@ -156,7 +156,7 @@ struct CouchView: View {
 
     private func tile(_ entry: LibraryEntry, selected: Bool) -> some View {
         ZStack(alignment: .bottomLeading) {
-            if entry.game.id == KnownGame.ac3.id { FrontierScene() } else { SpaceScene(seed: entry.game.name) }
+            GameArtwork(entry: entry, kind: .card)
             LinearGradient(colors: [.clear, Palette.background.opacity(0.9)], startPoint: .center, endPoint: .bottom)
             HStack(spacing: 8) {
                 Text(entry.game.name).font(.system(size: 22, weight: .semibold, design: .rounded)).lineLimit(2)

@@ -45,9 +45,20 @@ The interface fixes for Steam, Battle.net, Rockstar's Social Club and Amazon Gam
 
 Portnaut ships a copy of Highball's compatibility database (https://github.com/gauthierpiarrette/highball-db) in `Contents/Resources/Compatibility`, with each part's licence beside it, and downloads a newer copy from the same sources when the user checks for component updates:
 
-- `games.json` (from https://gethighball.com/data/games.json): curated game reports, CC0-1.0 (`LICENSE-games-CC0.txt`). The copy in the app keeps only the fields Portnaut reads (each game's id, title, status, Steam app id, renderer, anti-cheat names and verdict, and page link).
+- `games.json` (from https://gethighball.com/data/games.json): curated game reports, CC0-1.0 (`LICENSE-games-CC0.txt`). The copy in the app keeps only the fields Portnaut reads (each game's id, title, status, Steam app id, renderer, anti-cheat names and verdict, and page link), plus `reportsProblems`, which Portnaut derives from each player-reported game's notes; the notes themselves are left out.
 - `derived.json`: compatibility predictions computed by Highball from ProtonDB's community data exports (https://github.com/bdefore/protondb-data). It contains information made available under the Open Database License v1.0 (https://opendatacommons.org/licenses/odbl/1-0/; `LICENSE-derived-ODbL.txt`). Portnaut uses it unchanged, reads it only on the user's Mac, and credits it in Will It Run?.
 - `anticheat.json`: anti-cheat data derived from Are We Anti-Cheat Yet? (https://github.com/AreWeAntiCheatYet/AreWeAntiCheatYet), MIT licence; its copyright notice and licence are in `LICENSE-anticheat-MIT.txt`. The macOS verdicts are Highball's.
+
+## Sparkle 2.10.1 — Portnaut's own updates (included in Portnaut.app)
+
+- Project: https://sparkle-project.org, source https://github.com/sparkle-project/Sparkle/tree/2.10.1
+- Binary: `Sparkle-for-Swift-Package-Manager.zip` from https://github.com/sparkle-project/Sparkle/releases/tag/2.10.1, SHA-256 `4c2e48a3e50ebcc2c88a58a4c7264a1a99c3c31857ce754357afb9cdb323022a` (pinned in `Package.swift`).
+- Licence: MIT, © 2006-2013 Andy Matuschak, © 2009-2013 Elgato Systems GmbH, © 2011-2014 Kornel Lesiński, © 2015-2017 Mayur Pawashe, © 2014 C.W. Betts, © 2014 Petroules Corporation, © 2014 Big Nerd Ranch. It includes code under its own licences (bsdiff 4.3, BSD; sais-lite, MIT; Orson Peters' ed25519, zlib; SUSignatureVerifier, BSD). The complete text is in `Contents/Resources/Sparkle-LICENSE.txt`.
+- Portnaut.app contains `Sparkle.framework` unmodified except for the removal of its XPC services, which only sandboxed apps use, and Portnaut's ad-hoc signature over the framework. Sparkle reads `https://github.com/BuiltByArgo/Portnaut/releases/latest/download/appcast.xml`, a file attached to each GitHub release, when the user chooses **Check for Updates**, or daily if the user agreed; it sends no information about the Mac. Updates are accepted only with Built by Argo's EdDSA signature.
+
+## Cover art
+
+Steam games' cover art belongs to their publishers and to Valve. Portnaut includes none: it shows the copies Steam keeps in the bottle, and only if the user turns it on in Settings, downloads missing ones from Steam's image server (`cdn.cloudflare.steamstatic.com`) into the data folder's `Artwork/`.
 
 ## Apple system components
 

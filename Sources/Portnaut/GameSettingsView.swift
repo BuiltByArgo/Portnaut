@@ -114,6 +114,7 @@ struct GameSettingsSheet: View {
                             Text("Same as bottle (\(bottle.windowsVersion.title))").tag(WindowsVersion?.none)
                             ForEach(WindowsVersion.allCases) { Text($0.title).tag(Optional($0)) }
                         }.labelsHidden().frame(maxWidth: 320)
+                        OldWindowsNote(version: draft.windowsVersion)
                     }
                     section("DLL overrides") {
                         ForEach($draft.dlls) { $row in

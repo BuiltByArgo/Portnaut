@@ -11,6 +11,9 @@ public struct CompatibilityReport: Equatable, Sendable, Identifiable {
         case blocked
         /// Predicted from Linux reports to fail.
         case unlikely
+        /// Mac players report it not starting or not playable (reportsProblems). Below `reported`, so it
+        /// never drives a renderer recommendation.
+        case problems
         /// Predicted from mixed Linux reports.
         case maybe
         /// Predicted from Linux reports to work; not tested on a Mac.
@@ -37,6 +40,7 @@ public struct CompatibilityReport: Equatable, Sendable, Identifiable {
         switch status {
         case .blocked: "Won’t run"
         case .unlikely: "Unlikely to run"
+        case .problems: "Players report problems"
         case .maybe: "Might run"
         case .likely: "Likely to run"
         case .reported: "Players report it runs"
@@ -50,12 +54,32 @@ public struct CompatibilityReport: Equatable, Sendable, Identifiable {
         case .blocked:
             return antiCheat.isEmpty ? "Its publisher stops it from running on a Mac." : "It uses \(Self.list(antiCheat)), kernel-level anti-cheat that cannot run under Wine."
         case .unlikely: return "Linux players report it failing under Wine; it has not been tested on a Mac." + cheat
+        case .problems: return "Mac players report it not starting or not playable yet" + (renderer.map { " on \($0.title)" } ?? "") + ". Read the details before you buy it." + cheat
         case .maybe: return "Linux players report mixed results under Wine; it has not been tested on a Mac." + cheat
         case .likely: return "Linux players report it working under Wine; it has not been tested on a Mac yet." + cheat
         case .reported: return "Mac players report it working" + (renderer.map { " on \($0.title)" } ?? "") + "; not verified yet." + cheat
         case .tested: return (renderer.map { "Runs on \($0.title), verified on a Mac." } ?? "Verified on a Mac.") + cheat
         }
     }
+    /// Whether a curated game's notes say Mac players can't get it going: the first two sentences say it
+    /// doesn't start or isn't playable, and the first doesn't also say it runs. The bundled list keeps
+    /// no notes, so scripts/update-compatibility.sh stores this as `reportsProblems`, with the same rule.
+    public static func reportsProblems(_ notes: String?) -> Bool {
+        // Split before lowercasing: the sentence finder needs the capital that starts each sentence.
+        guard let notes, !notes.isEmpty else { return false }
+        var sentences: [String] = []
+        notes.enumerateSubstrings(in: notes.startIndex..., options: .bySentences) { sentence, _, _, stop in
+            if let sentence { sentences.append(sentence.lowercased()) }
+            if sentences.count == 2 { stop = true }
+        }
+        guard let first = sentences.first else { return false }
+        if positiveWords.contains(where: first.contains) { return false }
+        let opening = sentences.joined(separator: " ")
+        return negativeWords.contains(where: opening.contains)
+    }
+    static let positiveWords = ["playable with", "runs ", "runs.", "gets in game", "is playable", "plays ", "playable on", "reaches gameplay", "works "]
+    static let negativeWords = ["does not start", "doesn't start", "does not run", "doesn't run", "not playable", "won't start", "fails to start", "never opens", "does not launch", "doesn't launch"]
+
     public static func list(_ names: [String]) -> String {
         names.count < 2 ? names.joined() : names.dropLast().joined(separator: ", ") + " and " + names.last!
     }
@@ -102,7 +126,8 @@ public struct CompatibilityDatabase: Sendable {
             switch status {
             // Only Highball's own play on a Mac counts as tested; a Wine release's notes are a report.
             case "verified-local": mapped = .tested
-            case "community", "reported-upstream": mapped = .reported
+            case "community", "reported-upstream":
+                mapped = game["reportsProblems"] as? Bool == true || CompatibilityReport.reportsProblems(game["notes"] as? String) ? .problems : .reported
             case "blocked-anticheat", "blocked-publisher": mapped = .blocked
             default: continue
             }

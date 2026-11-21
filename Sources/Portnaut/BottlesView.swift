@@ -151,6 +151,7 @@ struct BottleDetail: View {
                 Picker("Windows version", selection: binding(\.windowsVersion, fallback: bottle)) {
                     ForEach(WindowsVersion.allCases) { Text($0.title).tag($0) }
                 }.frame(maxWidth: 320)
+                OldWindowsNote(version: bottle.windowsVersion)
                 Toggle("High Resolution Mode", isOn: binding(\.highResolution, fallback: bottle)).toggleStyle(.switch).disabled(bottle.metalFXActive)
                 if bottle.metalFXActive { Text("Off while MetalFX upscaling is on: games render at point resolution and MetalFX supplies the Retina detail.").font(.system(size: 11)).foregroundStyle(Palette.accent) }
                 Text("Renders at the Mac’s full Retina resolution, 192 DPI. Off renders a quarter of the pixels: much faster, softer image. Applies to programs started afterwards; a game may need its resolution chosen again.")
@@ -396,8 +397,11 @@ struct NewBottleSheet: View {
                 if let note = draft.renderer.licenseNote { Text(note).font(.system(size: 11)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true) }
             }
             Picker("Windows version", selection: $draft.windows) { ForEach(WindowsVersion.allCases) { Text($0.title).tag($0) } }.frame(maxWidth: 300)
+            OldWindowsNote(version: draft.windows)
             Toggle("Easy mode: choose the renderer for each game, and back up saves before each game", isOn: $draft.easyMode).toggleStyle(.switch)
+                .fixedSize(horizontal: false, vertical: true)
             Text("The renderer, Windows version and other settings can be changed later in the bottle’s settings.").font(.system(size: 11)).foregroundStyle(Palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
@@ -407,5 +411,7 @@ struct NewBottleSheet: View {
                 }.keyboardShortcut(.defaultAction).disabled(name.isEmpty || model.busy)
             }
         }.padding(26).frame(width: 520).background(Palette.background)
+        // New bottles start on the Windows version chosen in Settings.
+        .onAppear { draft.windows = model.settings.newBottleWindowsVersion }
     }
 }

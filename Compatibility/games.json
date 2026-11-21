@@ -2,8 +2,8 @@
  "license": "CC0-1.0",
  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
  "source": "https://github.com/gauthierpiarrette/highball-db",
- "generated": "2026-11-01",
- "count": 674,
+ "generated": "2026-11-20",
+ "count": 909,
  "note": "Trimmed by Portnaut to the fields it reads; the full data is at the source above.",
  "games": [
   {
@@ -254,7 +254,7 @@
    "id": "ni-no-kuni-ii-revenant-kingdom",
    "title": "Ni no Kuni II: Revenant Kingdom",
    "status": "reported-upstream",
-   "steam_appid": 589370,
+   "steam_appid": 589360,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/ni-no-kuni-ii-revenant-kingdom/"
   },
@@ -262,7 +262,7 @@
    "id": "ni-no-kuni-wrath-of-the-white-witch",
    "title": "Ni no Kuni: Wrath of the White Witch",
    "status": "reported-upstream",
-   "steam_appid": 589360,
+   "steam_appid": 798460,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/ni-no-kuni-wrath-of-the-white-witch/"
   },
@@ -393,6 +393,13 @@
    "url": "https://gethighball.com/games/9-kings/"
   },
   {
+   "id": "a-game-about-digging-a-hole",
+   "title": "A Game About Digging A Hole",
+   "status": "community",
+   "steam_appid": 3244220,
+   "url": "https://gethighball.com/games/a-game-about-digging-a-hole/"
+  },
+  {
    "id": "a-memoir-blue",
    "title": "A Memoir Blue",
    "status": "community",
@@ -482,6 +489,13 @@
    "url": "https://gethighball.com/games/aethermancer-demo/"
   },
   {
+   "id": "against-the-storm",
+   "title": "Against the Storm",
+   "status": "community",
+   "steam_appid": 1336490,
+   "url": "https://gethighball.com/games/against-the-storm/"
+  },
+  {
    "id": "age-of-empires-ii-2013",
    "title": "Age of Empires II (2013)",
    "status": "community",
@@ -497,12 +511,33 @@
    "url": "https://gethighball.com/games/age-of-empires-ii-definitive-edition/"
   },
   {
+   "id": "age-of-empires-iv-anniversary-edition",
+   "title": "Age of Empires IV: Anniversary Edition",
+   "status": "community",
+   "steam_appid": 1466860,
+   "url": "https://gethighball.com/games/age-of-empires-iv-anniversary-edition/"
+  },
+  {
+   "id": "age-of-empires-definitive-edition",
+   "title": "Age of Empires: Definitive Edition",
+   "status": "community",
+   "steam_appid": 1017900,
+   "url": "https://gethighball.com/games/age-of-empires-definitive-edition/"
+  },
+  {
    "id": "age-of-history-3",
    "title": "Age of History 3",
    "status": "community",
    "steam_appid": 2772750,
    "renderer": "dxvk",
    "url": "https://gethighball.com/games/age-of-history-3/"
+  },
+  {
+   "id": "age-of-mythology-extended-edition",
+   "title": "Age of Mythology: Extended Edition",
+   "status": "community",
+   "steam_appid": 266840,
+   "url": "https://gethighball.com/games/age-of-mythology-extended-edition/"
   },
   {
    "id": "age-of-mythology-retold",
@@ -513,12 +548,32 @@
    "url": "https://gethighball.com/games/age-of-mythology-retold/"
   },
   {
+   "id": "agent-a-a-puzzle-in-disguise",
+   "title": "Agent A: A puzzle in disguise",
+   "status": "community",
+   "steam_appid": 801480,
+   "url": "https://gethighball.com/games/agent-a-a-puzzle-in-disguise/"
+  },
+  {
    "id": "aimlabs",
    "title": "Aimlabs",
    "status": "community",
    "steam_appid": 714010,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/aimlabs/"
+  },
+  {
+   "id": "akane",
+   "title": "Akane",
+   "status": "community",
+   "steam_appid": 884260,
+   "url": "https://gethighball.com/games/akane/"
+  },
+  {
+   "id": "alan-wake-2",
+   "title": "Alan Wake 2",
+   "status": "community",
+   "url": "https://gethighball.com/games/alan-wake-2/"
   },
   {
    "id": "alice-madness-returns",
@@ -558,6 +613,12 @@
    "url": "https://gethighball.com/games/american-truck-simulator/"
   },
   {
+   "id": "among-thorns",
+   "title": "Among Thorns",
+   "status": "community",
+   "url": "https://gethighball.com/games/among-thorns/"
+  },
+  {
    "id": "among-us",
    "title": "Among Us",
    "status": "community",
@@ -574,11 +635,32 @@
    "url": "https://gethighball.com/games/aniimo/"
   },
   {
+   "id": "anno-1800",
+   "title": "Anno 1800",
+   "status": "community",
+   "steam_appid": 916440,
+   "url": "https://gethighball.com/games/anno-1800/"
+  },
+  {
+   "id": "another-world-20th-anniversary-edition",
+   "title": "Another World: 20th Anniversary Edition",
+   "status": "community",
+   "steam_appid": 233550,
+   "url": "https://gethighball.com/games/another-world-20th-anniversary-edition/"
+  },
+  {
    "id": "arc-raiders",
    "title": "ARC Raiders",
    "status": "community",
    "steam_appid": 1808500,
    "url": "https://gethighball.com/games/arc-raiders/"
+  },
+  {
+   "id": "arcade-paradise",
+   "title": "Arcade Paradise",
+   "status": "community",
+   "steam_appid": 1388870,
+   "url": "https://gethighball.com/games/arcade-paradise/"
   },
   {
    "id": "armored-core-vi",
@@ -618,11 +700,32 @@
    "url": "https://gethighball.com/games/ascend-to-zero/"
   },
   {
+   "id": "assassins-creed",
+   "title": "Assassin's Creed",
+   "status": "community",
+   "steam_appid": 15100,
+   "url": "https://gethighball.com/games/assassins-creed/"
+  },
+  {
    "id": "assassins-creed-brotherhood",
    "title": "Assassin's Creed Brotherhood",
    "status": "community",
    "steam_appid": 48190,
    "url": "https://gethighball.com/games/assassins-creed-brotherhood/"
+  },
+  {
+   "id": "assassins-creed-ii",
+   "title": "Assassin's Creed II",
+   "status": "community",
+   "steam_appid": 33230,
+   "url": "https://gethighball.com/games/assassins-creed-ii/"
+  },
+  {
+   "id": "assassins-creed-syndicate",
+   "title": "Assassin's Creed Syndicate",
+   "status": "community",
+   "steam_appid": 368500,
+   "url": "https://gethighball.com/games/assassins-creed-syndicate/"
   },
   {
    "id": "assetto-corsa-competizione",
@@ -631,6 +734,13 @@
    "steam_appid": 805550,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/assetto-corsa-competizione/"
+  },
+  {
+   "id": "asteroids-recharged",
+   "title": "Asteroids: Recharged",
+   "status": "community",
+   "steam_appid": 1700890,
+   "url": "https://gethighball.com/games/asteroids-recharged/"
   },
   {
    "id": "astral-ascent",
@@ -663,6 +773,27 @@
    "url": "https://gethighball.com/games/astroneer/"
   },
   {
+   "id": "atari-mania",
+   "title": "Atari Mania",
+   "status": "community",
+   "steam_appid": 1911800,
+   "url": "https://gethighball.com/games/atari-mania/"
+  },
+  {
+   "id": "atelier-sophie-2-the-alchemist-of-the-mysterious-dream",
+   "title": "Atelier Sophie 2: The Alchemist of the Mysterious Dream",
+   "status": "community",
+   "steam_appid": 1621310,
+   "url": "https://gethighball.com/games/atelier-sophie-2-the-alchemist-of-the-mysterious-dream/"
+  },
+  {
+   "id": "atomic-heart",
+   "title": "Atomic Heart",
+   "status": "community",
+   "steam_appid": 668580,
+   "url": "https://gethighball.com/games/atomic-heart/"
+  },
+  {
    "id": "autonauts",
    "title": "Autonauts",
    "status": "community",
@@ -685,12 +816,32 @@
    "url": "https://gethighball.com/games/azeroth-survivors/"
   },
   {
+   "id": "back-4-blood",
+   "title": "Back 4 Blood",
+   "status": "community",
+   "steam_appid": 924970,
+   "url": "https://gethighball.com/games/back-4-blood/",
+   "anticheat": {
+    "names": [
+     "Easy Anti-Cheat"
+    ],
+    "macVerdict": "warning"
+   }
+  },
+  {
    "id": "backrooms-escape-together",
    "title": "Backrooms: Escape Together",
    "status": "community",
    "steam_appid": 2141730,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/backrooms-escape-together/"
+  },
+  {
+   "id": "bad-cheese",
+   "title": "Bad Cheese",
+   "status": "community",
+   "steam_appid": 3094480,
+   "url": "https://gethighball.com/games/bad-cheese/"
   },
   {
    "id": "bad-north-jotunn-edition",
@@ -729,6 +880,13 @@
    "status": "community",
    "steam_appid": 208650,
    "url": "https://gethighball.com/games/batman-arkham-knight/"
+  },
+  {
+   "id": "batman-arkham-origins",
+   "title": "Batman: Arkham Origins",
+   "status": "community",
+   "steam_appid": 209000,
+   "url": "https://gethighball.com/games/batman-arkham-origins/"
   },
   {
    "id": "batomon-showdown",
@@ -770,6 +928,13 @@
    "url": "https://gethighball.com/games/bendy-and-the-ink-machine/"
   },
   {
+   "id": "between-horizons",
+   "title": "Between Horizons – A Sci-Fi Detective Adventure",
+   "status": "community",
+   "steam_appid": 1921980,
+   "url": "https://gethighball.com/games/between-horizons/"
+  },
+  {
    "id": "beyond-two-souls",
    "title": "Beyond: Two Souls",
    "status": "community",
@@ -808,11 +973,31 @@
    "url": "https://gethighball.com/games/birds-organized-neatly/"
   },
   {
+   "id": "black-desert",
+   "title": "Black Desert",
+   "status": "community",
+   "steam_appid": 582660,
+   "url": "https://gethighball.com/games/black-desert/",
+   "anticheat": {
+    "names": [
+     "XIGNCODE3"
+    ],
+    "macVerdict": "warning"
+   }
+  },
+  {
    "id": "black-mesa",
    "title": "Black Mesa",
    "status": "community",
    "steam_appid": 362890,
    "url": "https://gethighball.com/games/black-mesa/"
+  },
+  {
+   "id": "blackshard-demo",
+   "title": "BLACKSHARD Demo",
+   "status": "community",
+   "steam_appid": 3462270,
+   "url": "https://gethighball.com/games/blackshard-demo/"
   },
   {
    "id": "bleach-brave-souls",
@@ -855,12 +1040,17 @@
    "url": "https://gethighball.com/games/bloons-td-6/"
   },
   {
-   "id": "bodycam",
-   "title": "Bodycam",
+   "id": "blur",
+   "title": "Blur",
    "status": "community",
-   "steam_appid": 2406770,
-   "renderer": "d3dmetal",
-   "url": "https://gethighball.com/games/bodycam/"
+   "url": "https://gethighball.com/games/blur/"
+  },
+  {
+   "id": "bmx-streets",
+   "title": "BMX Streets",
+   "status": "community",
+   "steam_appid": 871540,
+   "url": "https://gethighball.com/games/bmx-streets/"
   },
   {
    "id": "bomber-crew",
@@ -870,11 +1060,32 @@
    "url": "https://gethighball.com/games/bomber-crew/"
   },
   {
+   "id": "bomjman",
+   "title": "BOMJMAN",
+   "status": "community",
+   "steam_appid": 1092040,
+   "url": "https://gethighball.com/games/bomjman/"
+  },
+  {
+   "id": "boomerang-fu",
+   "title": "Boomerang Fu",
+   "status": "community",
+   "steam_appid": 965680,
+   "url": "https://gethighball.com/games/boomerang-fu/"
+  },
+  {
    "id": "booster-pack-heroes-demo",
    "title": "Booster Pack Heroes Demo",
    "status": "community",
    "steam_appid": 4659940,
    "url": "https://gethighball.com/games/booster-pack-heroes-demo/"
+  },
+  {
+   "id": "borderlands-2",
+   "title": "Borderlands 2",
+   "status": "community",
+   "steam_appid": 49520,
+   "url": "https://gethighball.com/games/borderlands-2/"
   },
   {
    "id": "botany-manor",
@@ -926,12 +1137,26 @@
    "url": "https://gethighball.com/games/breathedge/"
   },
   {
+   "id": "brotato",
+   "title": "Brotato",
+   "status": "community",
+   "steam_appid": 1942280,
+   "url": "https://gethighball.com/games/brotato/"
+  },
+  {
    "id": "brothers-a-tale-of-two-sons",
    "title": "Brothers - A Tale of Two Sons",
    "status": "community",
    "steam_appid": 225080,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/brothers-a-tale-of-two-sons/"
+  },
+  {
+   "id": "buckshot-roulette",
+   "title": "Buckshot Roulette",
+   "status": "community",
+   "steam_appid": 2835570,
+   "url": "https://gethighball.com/games/buckshot-roulette/"
   },
   {
    "id": "bus-simulator-21-next-stop",
@@ -956,6 +1181,13 @@
    "url": "https://gethighball.com/games/call-of-duty-black-ops/"
   },
   {
+   "id": "call-of-duty-modern-warfare-2-2009",
+   "title": "Call of Duty: Modern Warfare 2 (2009)",
+   "status": "community",
+   "steam_appid": 10180,
+   "url": "https://gethighball.com/games/call-of-duty-modern-warfare-2-2009/"
+  },
+  {
    "id": "call-of-duty-world-at-war",
    "title": "Call of Duty: World at War",
    "status": "community",
@@ -975,7 +1207,8 @@
    "title": "Car Park Capital",
    "status": "community",
    "steam_appid": 3031880,
-   "url": "https://gethighball.com/games/car-park-capital/"
+   "url": "https://gethighball.com/games/car-park-capital/",
+   "reportsProblems": true
   },
   {
    "id": "caravan-sandwitch",
@@ -990,6 +1223,12 @@
    "status": "community",
    "steam_appid": 423880,
    "url": "https://gethighball.com/games/carpe-diem/"
+  },
+  {
+   "id": "castlevania-chronicles-ii-simons-quest",
+   "title": "Castlevania Chronicles II: Simon's Quest (fan game)",
+   "status": "community",
+   "url": "https://gethighball.com/games/castlevania-chronicles-ii-simons-quest/"
   },
   {
    "id": "castlevania-belmonts-curse-demo",
@@ -1030,6 +1269,20 @@
    "url": "https://gethighball.com/games/chained-together/"
   },
   {
+   "id": "changed",
+   "title": "Changed",
+   "status": "community",
+   "steam_appid": 814540,
+   "url": "https://gethighball.com/games/changed/"
+  },
+  {
+   "id": "chasing-styx",
+   "title": "Chasing Styx",
+   "status": "community",
+   "steam_appid": 594300,
+   "url": "https://gethighball.com/games/chasing-styx/"
+  },
+  {
    "id": "cheap-car-repair-welcome-to-nowhere",
    "title": "Cheap Car Repair: Welcome to Nowhere",
    "status": "community",
@@ -1066,14 +1319,6 @@
    "steam_appid": 1386780,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/city-of-gangsters/"
-  },
-  {
-   "id": "civilization-vi",
-   "title": "Civilization VI",
-   "status": "community",
-   "steam_appid": 289070,
-   "renderer": "dxmt",
-   "url": "https://gethighball.com/games/civilization-vi/"
   },
   {
    "id": "clair-obscur-expedition-33",
@@ -1158,6 +1403,13 @@
    "url": "https://gethighball.com/games/company-of-heroes-3/"
   },
   {
+   "id": "conarium",
+   "title": "Conarium",
+   "status": "community",
+   "steam_appid": 313780,
+   "url": "https://gethighball.com/games/conarium/"
+  },
+  {
    "id": "construction-simulator",
    "title": "Construction Simulator",
    "status": "community",
@@ -1220,7 +1472,8 @@
    "title": "CPM 2",
    "status": "community",
    "steam_appid": 4252340,
-   "url": "https://gethighball.com/games/cpm-2/"
+   "url": "https://gethighball.com/games/cpm-2/",
+   "reportsProblems": true
   },
   {
    "id": "crab-champions",
@@ -1238,12 +1491,33 @@
    "url": "https://gethighball.com/games/cricket-19/"
   },
   {
+   "id": "crime-simulator",
+   "title": "Crime Simulator",
+   "status": "community",
+   "steam_appid": 2737070,
+   "url": "https://gethighball.com/games/crime-simulator/"
+  },
+  {
    "id": "crusader-kings-iii",
    "title": "Crusader Kings III",
    "status": "community",
    "steam_appid": 1158310,
    "renderer": "dxvk",
    "url": "https://gethighball.com/games/crusader-kings-iii/"
+  },
+  {
+   "id": "crush-crush",
+   "title": "Crush Crush",
+   "status": "community",
+   "steam_appid": 459820,
+   "url": "https://gethighball.com/games/crush-crush/"
+  },
+  {
+   "id": "crypt-custodian",
+   "title": "Crypt Custodian",
+   "status": "community",
+   "steam_appid": 2394650,
+   "url": "https://gethighball.com/games/crypt-custodian/"
   },
   {
    "id": "cyberpunk-2077",
@@ -1308,6 +1582,20 @@
    "url": "https://gethighball.com/games/dawnsbury-days/"
   },
   {
+   "id": "days-gone",
+   "title": "Days Gone",
+   "status": "community",
+   "steam_appid": 1259420,
+   "url": "https://gethighball.com/games/days-gone/"
+  },
+  {
+   "id": "dcs-world-steam-edition",
+   "title": "DCS World Steam Edition",
+   "status": "community",
+   "steam_appid": 223750,
+   "url": "https://gethighball.com/games/dcs-world-steam-edition/"
+  },
+  {
    "id": "dead-island-2",
    "title": "Dead Island 2",
    "status": "community",
@@ -1321,6 +1609,13 @@
    "status": "community",
    "steam_appid": 265550,
    "url": "https://gethighball.com/games/dead-rising-3/"
+  },
+  {
+   "id": "deadly-days-roadtrip",
+   "title": "Deadly Days: Roadtrip",
+   "status": "community",
+   "steam_appid": 3026450,
+   "url": "https://gethighball.com/games/deadly-days-roadtrip/"
   },
   {
    "id": "death-stranding",
@@ -1400,6 +1695,13 @@
    "url": "https://gethighball.com/games/detroit-become-human/"
   },
   {
+   "id": "detroit-become-human-demo",
+   "title": "Detroit: Become Human Demo",
+   "status": "community",
+   "steam_appid": 1224230,
+   "url": "https://gethighball.com/games/detroit-become-human-demo/"
+  },
+  {
    "id": "devil-may-cry-4-special-edition",
    "title": "Devil May Cry 4 Special Edition",
    "status": "community",
@@ -1414,6 +1716,13 @@
    "steam_appid": 601150,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/devil-may-cry-5/"
+  },
+  {
+   "id": "devil-may-cry-hd-collection",
+   "title": "Devil May Cry HD Collection",
+   "status": "community",
+   "steam_appid": 631510,
+   "url": "https://gethighball.com/games/devil-may-cry-hd-collection/"
   },
   {
    "id": "diablo-ii-resurrected",
@@ -1483,6 +1792,13 @@
    "steam_appid": 403640,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/dishonored-2/"
+  },
+  {
+   "id": "disney-speedstorm",
+   "title": "Disney Speedstorm",
+   "status": "community",
+   "steam_appid": 1537830,
+   "url": "https://gethighball.com/games/disney-speedstorm/"
   },
   {
    "id": "djmax-respect-v",
@@ -1592,6 +1908,41 @@
    "url": "https://gethighball.com/games/dune-spice-wars/"
   },
   {
+   "id": "dwarf-fortress",
+   "title": "Dwarf Fortress",
+   "status": "community",
+   "steam_appid": 975370,
+   "url": "https://gethighball.com/games/dwarf-fortress/"
+  },
+  {
+   "id": "dying-light",
+   "title": "Dying Light",
+   "status": "community",
+   "steam_appid": 239140,
+   "url": "https://gethighball.com/games/dying-light/"
+  },
+  {
+   "id": "dying-light-2-reloaded-edition",
+   "title": "Dying Light 2: Reloaded Edition",
+   "status": "community",
+   "steam_appid": 534380,
+   "url": "https://gethighball.com/games/dying-light-2-reloaded-edition/"
+  },
+  {
+   "id": "dyson-sphere-program",
+   "title": "Dyson Sphere Program",
+   "status": "community",
+   "steam_appid": 1366540,
+   "url": "https://gethighball.com/games/dyson-sphere-program/"
+  },
+  {
+   "id": "easy-delivery-co",
+   "title": "Easy Delivery Co.",
+   "status": "community",
+   "steam_appid": 3293010,
+   "url": "https://gethighball.com/games/easy-delivery-co/"
+  },
+  {
    "id": "efootball",
    "title": "eFootball",
    "status": "community",
@@ -1658,6 +2009,13 @@
    "url": "https://gethighball.com/games/emberward/"
   },
   {
+   "id": "empyrion-galactic-survival",
+   "title": "Empyrion - Galactic Survival",
+   "status": "community",
+   "steam_appid": 383120,
+   "url": "https://gethighball.com/games/empyrion-galactic-survival/"
+  },
+  {
    "id": "endless-legend-2",
    "title": "Endless Legend 2",
    "status": "community",
@@ -1670,6 +2028,13 @@
    "status": "community",
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/engine-sim-community-edition/"
+  },
+  {
+   "id": "enigma-of-fear",
+   "title": "Enigma of Fear",
+   "status": "community",
+   "steam_appid": 1507580,
+   "url": "https://gethighball.com/games/enigma-of-fear/"
   },
   {
    "id": "enshrouded",
@@ -1710,6 +2075,20 @@
    "url": "https://gethighball.com/games/europa-universalis-5/"
   },
   {
+   "id": "evans-remains-demo",
+   "title": "Evan's Remains Demo",
+   "status": "community",
+   "steam_appid": 1114470,
+   "url": "https://gethighball.com/games/evans-remains-demo/"
+  },
+  {
+   "id": "everrail-demo",
+   "title": "EverRail Demo",
+   "status": "community",
+   "steam_appid": 4371260,
+   "url": "https://gethighball.com/games/everrail-demo/"
+  },
+  {
    "id": "ez2on-reboot-r",
    "title": "EZ2ON REBOOT : R",
    "status": "community",
@@ -1722,6 +2101,13 @@
     ],
     "macVerdict": "warning"
    }
+  },
+  {
+   "id": "fear",
+   "title": "F.E.A.R.",
+   "status": "community",
+   "steam_appid": 21090,
+   "url": "https://gethighball.com/games/fear/"
   },
   {
    "id": "f1-2020",
@@ -1753,12 +2139,39 @@
    "url": "https://gethighball.com/games/fahrenheit-indigo-prophecy-remastered/"
   },
   {
+   "id": "fallout",
+   "title": "Fallout",
+   "status": "community",
+   "steam_appid": 38400,
+   "url": "https://gethighball.com/games/fallout/"
+  },
+  {
+   "id": "fallout-2",
+   "title": "Fallout 2",
+   "status": "community",
+   "steam_appid": 38410,
+   "url": "https://gethighball.com/games/fallout-2/"
+  },
+  {
    "id": "fallout-4",
    "title": "Fallout 4",
    "status": "community",
    "steam_appid": 377160,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/fallout-4/"
+  },
+  {
+   "id": "fallout-76",
+   "title": "Fallout 76",
+   "status": "community",
+   "steam_appid": 1151340,
+   "url": "https://gethighball.com/games/fallout-76/",
+   "anticheat": {
+    "names": [
+     "Unknown (Custom)"
+    ],
+    "macVerdict": "warning"
+   }
   },
   {
    "id": "fallout-sonora",
@@ -1781,12 +2194,67 @@
    "url": "https://gethighball.com/games/far-cry-3/"
   },
   {
+   "id": "farfarwest",
+   "title": "Far Far West",
+   "status": "community",
+   "steam_appid": 3124540,
+   "url": "https://gethighball.com/games/farfarwest/"
+  },
+  {
+   "id": "farm-and-feast",
+   "title": "Farm & Feast",
+   "status": "community",
+   "steam_appid": 4521650,
+   "url": "https://gethighball.com/games/farm-and-feast/"
+  },
+  {
+   "id": "fart-together-demo",
+   "title": "Fart Together Demo",
+   "status": "community",
+   "steam_appid": 5208630,
+   "url": "https://gethighball.com/games/fart-together-demo/"
+  },
+  {
    "id": "farthest-frontier",
    "title": "Farthest Frontier",
    "status": "community",
    "steam_appid": 1044720,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/farthest-frontier/"
+  },
+  {
+   "id": "fear-and-hunger",
+   "title": "Fear & Hunger",
+   "status": "community",
+   "steam_appid": 1002300,
+   "url": "https://gethighball.com/games/fear-and-hunger/"
+  },
+  {
+   "id": "ferocious",
+   "title": "FEROCIOUS",
+   "status": "community",
+   "steam_appid": 1645630,
+   "url": "https://gethighball.com/games/ferocious/"
+  },
+  {
+   "id": "fields-of-mistria",
+   "title": "Fields of Mistria",
+   "status": "community",
+   "steam_appid": 2142790,
+   "url": "https://gethighball.com/games/fields-of-mistria/"
+  },
+  {
+   "id": "fifa-19",
+   "title": "FIFA 19",
+   "status": "community",
+   "url": "https://gethighball.com/games/fifa-19/"
+  },
+  {
+   "id": "fifa-22",
+   "title": "FIFA 22",
+   "status": "community",
+   "steam_appid": 1506830,
+   "url": "https://gethighball.com/games/fifa-22/"
   },
   {
    "id": "final-fantasy-resonance",
@@ -1803,6 +2271,13 @@
    "steam_appid": 4474710,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/final-fantasy-resonance-demo/"
+  },
+  {
+   "id": "final-fantasy-vii-rebirth",
+   "title": "FINAL FANTASY VII REBIRTH",
+   "status": "community",
+   "steam_appid": 2909400,
+   "url": "https://gethighball.com/games/final-fantasy-vii-rebirth/"
   },
   {
    "id": "final-fantasy-vii-remake-intergrade",
@@ -1864,7 +2339,27 @@
    "title": "Five Nights at Freddy's: Security Breach",
    "status": "community",
    "steam_appid": 747660,
-   "url": "https://gethighball.com/games/five-nights-at-freddys-security-breach/"
+   "url": "https://gethighball.com/games/five-nights-at-freddys-security-breach/",
+   "reportsProblems": true
+  },
+  {
+   "id": "frickbears3",
+   "title": "Five Nights at Frickbear's 3",
+   "status": "community",
+   "url": "https://gethighball.com/games/frickbears3/"
+  },
+  {
+   "id": "flotsam",
+   "title": "Flotsam",
+   "status": "community",
+   "steam_appid": 821250,
+   "url": "https://gethighball.com/games/flotsam/"
+  },
+  {
+   "id": "fnaf-online-multiplayer",
+   "title": "FNAF Online Multiplayer",
+   "status": "community",
+   "url": "https://gethighball.com/games/fnaf-online-multiplayer/"
   },
   {
    "id": "folded-fables-tidy-up-the-dragon-hoard",
@@ -1891,12 +2386,27 @@
    "url": "https://gethighball.com/games/forgive-me-father/"
   },
   {
+   "id": "fort-solis",
+   "title": "Fort Solis",
+   "status": "community",
+   "steam_appid": 1931730,
+   "url": "https://gethighball.com/games/fort-solis/"
+  },
+  {
+   "id": "forts",
+   "title": "Forts",
+   "status": "community",
+   "steam_appid": 410900,
+   "url": "https://gethighball.com/games/forts/"
+  },
+  {
    "id": "forza-horizon-4",
    "title": "Forza Horizon 4",
    "status": "community",
    "steam_appid": 1293830,
    "renderer": "d3dmetal",
-   "url": "https://gethighball.com/games/forza-horizon-4/"
+   "url": "https://gethighball.com/games/forza-horizon-4/",
+   "reportsProblems": true
   },
   {
    "id": "forza-horizon-5",
@@ -1904,7 +2414,8 @@
    "status": "community",
    "steam_appid": 1551360,
    "renderer": "d3dmetal",
-   "url": "https://gethighball.com/games/forza-horizon-5/"
+   "url": "https://gethighball.com/games/forza-horizon-5/",
+   "reportsProblems": true
   },
   {
    "id": "fps-chess",
@@ -1951,6 +2462,13 @@
    "url": "https://gethighball.com/games/gi-joe-wrath-of-cobra/"
   },
   {
+   "id": "gamedec-definitive-edition",
+   "title": "Gamedec - Definitive Edition",
+   "status": "community",
+   "steam_appid": 917720,
+   "url": "https://gethighball.com/games/gamedec-definitive-edition/"
+  },
+  {
    "id": "garden-story",
    "title": "Garden Story",
    "status": "community",
@@ -1973,6 +2491,12 @@
    "url": "https://gethighball.com/games/gas-station-simulator/"
   },
   {
+   "id": "genshin-impact-cloud",
+   "title": "Genshin Impact Cloud",
+   "status": "community",
+   "url": "https://gethighball.com/games/genshin-impact-cloud/"
+  },
+  {
    "id": "geometry-dash",
    "title": "Geometry Dash",
    "status": "community",
@@ -1987,12 +2511,32 @@
    "url": "https://gethighball.com/games/gethigh-exe/"
   },
   {
+   "id": "ghost-of-tsushima-directors-cut",
+   "title": "Ghost of Tsushima DIRECTOR'S CUT",
+   "status": "community",
+   "steam_appid": 2215430,
+   "url": "https://gethighball.com/games/ghost-of-tsushima-directors-cut/",
+   "anticheat": {
+    "names": [
+     "PlayStation Overlay"
+    ],
+    "macVerdict": "warning"
+   }
+  },
+  {
    "id": "ghostrunner-2",
    "title": "Ghostrunner 2",
    "status": "community",
    "steam_appid": 2144740,
    "renderer": "dxvk",
    "url": "https://gethighball.com/games/ghostrunner-2/"
+  },
+  {
+   "id": "ghostwire-tokyo",
+   "title": "Ghostwire: Tokyo",
+   "status": "community",
+   "steam_appid": 1475810,
+   "url": "https://gethighball.com/games/ghostwire-tokyo/"
   },
   {
    "id": "god-of-war",
@@ -2027,12 +2571,26 @@
    "url": "https://gethighball.com/games/golden-chambers/"
   },
   {
+   "id": "gotham-knights",
+   "title": "Gotham Knights",
+   "status": "community",
+   "steam_appid": 1496790,
+   "url": "https://gethighball.com/games/gotham-knights/"
+  },
+  {
    "id": "gothic-1-remake",
    "title": "Gothic 1 Remake",
    "status": "community",
    "steam_appid": 1297900,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/gothic-1-remake/"
+  },
+  {
+   "id": "granblue-fantasy-versus-rising",
+   "title": "Granblue Fantasy Versus: Rising",
+   "status": "community",
+   "steam_appid": 2157560,
+   "url": "https://gethighball.com/games/granblue-fantasy-versus-rising/"
   },
   {
    "id": "grand-theft-auto-iv",
@@ -2063,6 +2621,13 @@
    "steam_appid": 12120,
    "renderer": "wined3d",
    "url": "https://gethighball.com/games/grand-theft-auto-san-andreas/"
+  },
+  {
+   "id": "grand-theft-auto-san-andreas-the-definitive-edition",
+   "title": "Grand Theft Auto: San Andreas – The Definitive Edition",
+   "status": "community",
+   "steam_appid": 1547000,
+   "url": "https://gethighball.com/games/grand-theft-auto-san-andreas-the-definitive-edition/"
   },
   {
    "id": "graveyard-keeper-2",
@@ -2096,11 +2661,25 @@
    "url": "https://gethighball.com/games/grim-dawn/"
   },
   {
+   "id": "grounded",
+   "title": "Grounded",
+   "status": "community",
+   "steam_appid": 962130,
+   "url": "https://gethighball.com/games/grounded/"
+  },
+  {
    "id": "guild-wars-2",
    "title": "Guild Wars 2",
    "status": "community",
    "steam_appid": 1284210,
    "url": "https://gethighball.com/games/guild-wars-2/"
+  },
+  {
+   "id": "gunslugs",
+   "title": "Gunslugs",
+   "status": "community",
+   "steam_appid": 371890,
+   "url": "https://gethighball.com/games/gunslugs/"
   },
   {
    "id": "gunsmith-simulator",
@@ -2119,12 +2698,26 @@
    "url": "https://gethighball.com/games/hack-n-slash/"
   },
   {
+   "id": "hacker-evolution-2019-hd-remaster",
+   "title": "Hacker Evolution - 2019 HD remaster",
+   "status": "community",
+   "steam_appid": 1153990,
+   "url": "https://gethighball.com/games/hacker-evolution-2019-hd-remaster/"
+  },
+  {
    "id": "hades-ii",
    "title": "Hades II",
    "status": "community",
    "steam_appid": 1145350,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/hades-ii/"
+  },
+  {
+   "id": "haiku-the-robot",
+   "title": "Haiku, the Robot",
+   "status": "community",
+   "steam_appid": 1231880,
+   "url": "https://gethighball.com/games/haiku-the-robot/"
   },
   {
    "id": "half-life",
@@ -2275,6 +2868,19 @@
    "url": "https://gethighball.com/games/high-on-life/"
   },
   {
+   "id": "highway-driving",
+   "title": "Highway Driving",
+   "status": "community",
+   "url": "https://gethighball.com/games/highway-driving/"
+  },
+  {
+   "id": "hitman",
+   "title": "HITMAN",
+   "status": "community",
+   "steam_appid": 236870,
+   "url": "https://gethighball.com/games/hitman/"
+  },
+  {
    "id": "hobo-tough-life",
    "title": "Hobo: Tough Life",
    "status": "community",
@@ -2313,6 +2919,13 @@
    "url": "https://gethighball.com/games/home-a-unique-horror-adventure/"
   },
   {
+   "id": "homgard",
+   "title": "Homgard",
+   "status": "community",
+   "steam_appid": 4287570,
+   "url": "https://gethighball.com/games/homgard/"
+  },
+  {
    "id": "honeycomb-the-world-beyond",
    "title": "Honeycomb: The World Beyond",
    "status": "community",
@@ -2323,6 +2936,7 @@
    "title": "Honkai: Star Rail",
    "status": "community",
    "url": "https://gethighball.com/games/honkai-star-rail/",
+   "reportsProblems": true,
    "anticheat": {
     "names": [
      "miHoYo Protect"
@@ -2346,6 +2960,19 @@
    "url": "https://gethighball.com/games/horizon-zero-dawn/"
   },
   {
+   "id": "horror-adventure",
+   "title": "Horror Adventure",
+   "status": "community",
+   "url": "https://gethighball.com/games/horror-adventure/"
+  },
+  {
+   "id": "hot-brass",
+   "title": "Hot Brass",
+   "status": "community",
+   "steam_appid": 892860,
+   "url": "https://gethighball.com/games/hot-brass/"
+  },
+  {
    "id": "hot-wheels-unleashed",
    "title": "HOT WHEELS UNLEASHED",
    "status": "community",
@@ -2354,11 +2981,25 @@
    "url": "https://gethighball.com/games/hot-wheels-unleashed/"
   },
   {
+   "id": "hotel-architect",
+   "title": "Hotel Architect",
+   "status": "community",
+   "steam_appid": 1602000,
+   "url": "https://gethighball.com/games/hotel-architect/"
+  },
+  {
    "id": "hotline-miami",
    "title": "Hotline Miami",
    "status": "community",
    "steam_appid": 219150,
    "url": "https://gethighball.com/games/hotline-miami/"
+  },
+  {
+   "id": "how-many-dudes",
+   "title": "How Many Dudes?",
+   "status": "community",
+   "steam_appid": 3934270,
+   "url": "https://gethighball.com/games/how-many-dudes/"
   },
   {
    "id": "how-to-fish",
@@ -2384,6 +3025,13 @@
    "url": "https://gethighball.com/games/hue/"
   },
   {
+   "id": "human-fall-flat",
+   "title": "Human Fall Flat",
+   "status": "community",
+   "steam_appid": 477160,
+   "url": "https://gethighball.com/games/human-fall-flat/"
+  },
+  {
    "id": "humanitz",
    "title": "HumanitZ",
    "status": "community",
@@ -2405,12 +3053,47 @@
    "url": "https://gethighball.com/games/i-know-a-guy-shady-life-simulator/"
   },
   {
+   "id": "idle-champions-of-the-forgotten-realms",
+   "title": "Idle Champions of the Forgotten Realms",
+   "status": "community",
+   "steam_appid": 627690,
+   "url": "https://gethighball.com/games/idle-champions-of-the-forgotten-realms/"
+  },
+  {
    "id": "ikaruga",
    "title": "Ikaruga",
    "status": "community",
    "steam_appid": 253750,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/ikaruga/"
+  },
+  {
+   "id": "in-falsus",
+   "title": "In Falsus",
+   "status": "community",
+   "steam_appid": 3971950,
+   "url": "https://gethighball.com/games/in-falsus/"
+  },
+  {
+   "id": "incremental-traffic",
+   "title": "Incremental Traffic",
+   "status": "community",
+   "steam_appid": 5475960,
+   "url": "https://gethighball.com/games/incremental-traffic/"
+  },
+  {
+   "id": "injustice-2",
+   "title": "Injustice 2",
+   "status": "community",
+   "steam_appid": 627270,
+   "url": "https://gethighball.com/games/injustice-2/"
+  },
+  {
+   "id": "injustice-gods-among-us-ultimate-edition",
+   "title": "Injustice: Gods Among Us Ultimate Edition",
+   "status": "community",
+   "steam_appid": 242700,
+   "url": "https://gethighball.com/games/injustice-gods-among-us-ultimate-edition/"
   },
   {
    "id": "insaniquarium-deluxe",
@@ -2435,6 +3118,13 @@
    "steam_appid": 2239710,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/into-the-dead-our-darkest-days/"
+  },
+  {
+   "id": "ion-fury",
+   "title": "Ion Fury",
+   "status": "community",
+   "steam_appid": 562860,
+   "url": "https://gethighball.com/games/ion-fury/"
   },
   {
    "id": "iracing-arcade",
@@ -2504,6 +3194,13 @@
    "url": "https://gethighball.com/games/kards-the-wwii-card-game/"
   },
   {
+   "id": "kena-bridge-of-spirits",
+   "title": "Kena: Bridge of Spirits",
+   "status": "community",
+   "steam_appid": 1954200,
+   "url": "https://gethighball.com/games/kena-bridge-of-spirits/"
+  },
+  {
    "id": "kenshi",
    "title": "Kenshi",
    "status": "community",
@@ -2517,6 +3214,13 @@
    "steam_appid": 345390,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/kings-quest/"
+  },
+  {
+   "id": "kingdom-come-deliverance-ii",
+   "title": "Kingdom Come: Deliverance II",
+   "status": "community",
+   "steam_appid": 1771300,
+   "url": "https://gethighball.com/games/kingdom-come-deliverance-ii/"
   },
   {
    "id": "kingdom-two-crowns",
@@ -2535,6 +3239,14 @@
    "url": "https://gethighball.com/games/kingdom-new-lands/"
   },
   {
+   "id": "kunitsu-gami-path-of-the-goddess-demo",
+   "title": "Kunitsu-Gami: Path of the Goddess Demo",
+   "status": "community",
+   "steam_appid": 2842890,
+   "renderer": "d3dmetal",
+   "url": "https://gethighball.com/games/kunitsu-gami-path-of-the-goddess-demo/"
+  },
+  {
    "id": "kuukiyomi-consider-it",
    "title": "KUUKIYOMI: Consider It",
    "status": "community",
@@ -2543,12 +3255,33 @@
    "url": "https://gethighball.com/games/kuukiyomi-consider-it/"
   },
   {
+   "id": "last-epoch",
+   "title": "Last Epoch",
+   "status": "community",
+   "steam_appid": 899770,
+   "url": "https://gethighball.com/games/last-epoch/"
+  },
+  {
+   "id": "last-evil",
+   "title": "Last Evil",
+   "status": "community",
+   "steam_appid": 823910,
+   "url": "https://gethighball.com/games/last-evil/"
+  },
+  {
    "id": "last-pirates-die-together",
    "title": "Last Pirates: Die Together",
    "status": "community",
    "steam_appid": 4317790,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/last-pirates-die-together/"
+  },
+  {
+   "id": "leaf-it-alone",
+   "title": "Leaf it Alone",
+   "status": "community",
+   "steam_appid": 3981100,
+   "url": "https://gethighball.com/games/leaf-it-alone/"
   },
   {
    "id": "left-4-dead",
@@ -2573,6 +3306,13 @@
    "url": "https://gethighball.com/games/legends-of-idleon-mmo/"
   },
   {
+   "id": "lego-batman-3-beyond-gotham",
+   "title": "LEGO Batman 3: Beyond Gotham",
+   "status": "community",
+   "steam_appid": 313690,
+   "url": "https://gethighball.com/games/lego-batman-3-beyond-gotham/"
+  },
+  {
    "id": "lego-city-undercover",
    "title": "LEGO City Undercover",
    "status": "community",
@@ -2595,6 +3335,13 @@
    "url": "https://gethighball.com/games/lego-star-wars-the-skywalker-saga/"
   },
   {
+   "id": "lego-voyagers",
+   "title": "LEGO Voyagers",
+   "status": "community",
+   "steam_appid": 1538550,
+   "url": "https://gethighball.com/games/lego-voyagers/"
+  },
+  {
    "id": "lego-marvel-super-heroes",
    "title": "LEGO® MARVEL Super Heroes",
    "status": "community",
@@ -2615,6 +3362,13 @@
    "steam_appid": 1966720,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/lethal-company/"
+  },
+  {
+   "id": "librarian-tidy-up-the-arcane-library",
+   "title": "Librarian: Tidy Up the Arcane Library!",
+   "status": "community",
+   "steam_appid": 4197610,
+   "url": "https://gethighball.com/games/librarian-tidy-up-the-arcane-library/"
   },
   {
    "id": "life-is-strange-remastered",
@@ -2663,11 +3417,30 @@
    "url": "https://gethighball.com/games/lumina-veil/"
   },
   {
+   "id": "macromagi",
+   "title": "Macromagi",
+   "status": "community",
+   "url": "https://gethighball.com/games/macromagi/"
+  },
+  {
+   "id": "mafia-hotel",
+   "title": "Mafia Hotel",
+   "status": "community",
+   "url": "https://gethighball.com/games/mafia-hotel/"
+  },
+  {
    "id": "mafia-ii-definitive-edition",
    "title": "Mafia II: Definitive Edition",
    "status": "community",
    "steam_appid": 1030830,
    "url": "https://gethighball.com/games/mafia-ii-definitive-edition/"
+  },
+  {
+   "id": "mafia-definitive-edition",
+   "title": "Mafia: Definitive Edition",
+   "status": "community",
+   "steam_appid": 1030840,
+   "url": "https://gethighball.com/games/mafia-definitive-edition/"
   },
   {
    "id": "mage-arena",
@@ -2695,6 +3468,13 @@
     ],
     "macVerdict": "warning"
    }
+  },
+  {
+   "id": "mahjong-soul",
+   "title": "Mahjong Soul",
+   "status": "community",
+   "steam_appid": 2739990,
+   "url": "https://gethighball.com/games/mahjong-soul/"
   },
   {
    "id": "make-way",
@@ -2755,6 +3535,27 @@
    }
   },
   {
+   "id": "marvel-snap",
+   "title": "MARVEL SNAP",
+   "status": "community",
+   "steam_appid": 1997040,
+   "url": "https://gethighball.com/games/marvel-snap/"
+  },
+  {
+   "id": "marvel-vs-capcom-fighting-collection-arcade-classics",
+   "title": "MARVEL vs. CAPCOM Fighting Collection: Arcade Classics",
+   "status": "community",
+   "steam_appid": 2634890,
+   "url": "https://gethighball.com/games/marvel-vs-capcom-fighting-collection-arcade-classics/"
+  },
+  {
+   "id": "marvels-spider-man-2",
+   "title": "Marvel's Spider-Man 2",
+   "status": "community",
+   "steam_appid": 2651280,
+   "url": "https://gethighball.com/games/marvels-spider-man-2/"
+  },
+  {
    "id": "marvels-spider-man-remastered",
    "title": "Marvel's Spider-Man Remastered",
    "status": "community",
@@ -2768,6 +3569,27 @@
    "steam_appid": 1817190,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/marvels-spider-man-miles-morales/"
+  },
+  {
+   "id": "max-payne",
+   "title": "Max Payne",
+   "status": "community",
+   "steam_appid": 12140,
+   "url": "https://gethighball.com/games/max-payne/"
+  },
+  {
+   "id": "max-payne-2",
+   "title": "Max Payne 2: The Fall of Max Payne",
+   "status": "community",
+   "steam_appid": 12150,
+   "url": "https://gethighball.com/games/max-payne-2/"
+  },
+  {
+   "id": "max-payne-3",
+   "title": "Max Payne 3",
+   "status": "community",
+   "steam_appid": 204100,
+   "url": "https://gethighball.com/games/max-payne-3/"
   },
   {
    "id": "meccha-chameleon",
@@ -2801,6 +3623,34 @@
    "url": "https://gethighball.com/games/melatonin/"
   },
   {
+   "id": "meltdown-crew-demo",
+   "title": "Meltdown Crew Demo",
+   "status": "community",
+   "steam_appid": 5324440,
+   "url": "https://gethighball.com/games/meltdown-crew-demo/"
+  },
+  {
+   "id": "message-from-aliens-demo",
+   "title": "Message From Aliens Demo",
+   "status": "community",
+   "steam_appid": 5195140,
+   "url": "https://gethighball.com/games/message-from-aliens-demo/"
+  },
+  {
+   "id": "metal-gear-solid-master-collection-version",
+   "title": "METAL GEAR SOLID - Master Collection Version",
+   "status": "community",
+   "steam_appid": 2131630,
+   "url": "https://gethighball.com/games/metal-gear-solid-master-collection-version/"
+  },
+  {
+   "id": "metro-2033",
+   "title": "Metro 2033",
+   "status": "community",
+   "steam_appid": 43110,
+   "url": "https://gethighball.com/games/metro-2033/"
+  },
+  {
    "id": "metro-last-light-redux",
    "title": "Metro: Last Light Redux",
    "status": "community",
@@ -2826,8 +3676,16 @@
    "id": "mindcop",
    "title": "Mindcop",
    "status": "community",
+   "steam_appid": 1517180,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/mindcop/"
+  },
+  {
+   "id": "mindustry",
+   "title": "Mindustry",
+   "status": "community",
+   "steam_appid": 1127400,
+   "url": "https://gethighball.com/games/mindustry/"
   },
   {
    "id": "minecraft-dungeons",
@@ -2934,6 +3792,20 @@
    "url": "https://gethighball.com/games/mortal-kombat-x/"
   },
   {
+   "id": "motor-town-behind-the-wheel",
+   "title": "Motor Town: Behind The Wheel",
+   "status": "community",
+   "steam_appid": 1369670,
+   "url": "https://gethighball.com/games/motor-town-behind-the-wheel/"
+  },
+  {
+   "id": "motorslice",
+   "title": "MOTORSLICE",
+   "status": "community",
+   "steam_appid": 2830030,
+   "url": "https://gethighball.com/games/motorslice/"
+  },
+  {
    "id": "mount-noire",
    "title": "Mount Noire",
    "status": "community",
@@ -2949,6 +3821,13 @@
    "url": "https://gethighball.com/games/mouse-pi-for-hire/"
   },
   {
+   "id": "moving-out",
+   "title": "Moving Out",
+   "status": "community",
+   "steam_appid": 996770,
+   "url": "https://gethighball.com/games/moving-out/"
+  },
+  {
    "id": "mudrunner",
    "title": "MudRunner",
    "status": "community",
@@ -2962,6 +3841,13 @@
    "status": "community",
    "steam_appid": 377860,
    "url": "https://gethighball.com/games/mushihimesama/"
+  },
+  {
+   "id": "mx-bikes",
+   "title": "MX Bikes",
+   "status": "community",
+   "steam_appid": 655500,
+   "url": "https://gethighball.com/games/mx-bikes/"
   },
   {
    "id": "my-summer-car",
@@ -2991,6 +3877,13 @@
    "status": "community",
    "steam_appid": 3247750,
    "url": "https://gethighball.com/games/mycopunk/"
+  },
+  {
+   "id": "need-for-speed-most-wanted-2012",
+   "title": "Need for Speed Most Wanted (2012)",
+   "status": "community",
+   "steam_appid": 1262560,
+   "url": "https://gethighball.com/games/need-for-speed-most-wanted-2012/"
   },
   {
    "id": "need-for-speed-most-wanted-2005",
@@ -3028,12 +3921,46 @@
    "url": "https://gethighball.com/games/neon-abyss/"
   },
   {
+   "id": "neon-inferno-demo",
+   "title": "Neon Inferno Demo",
+   "status": "community",
+   "steam_appid": 3509220,
+   "url": "https://gethighball.com/games/neon-inferno-demo/"
+  },
+  {
+   "id": "neotokyo",
+   "title": "NEOTOKYO°",
+   "status": "community",
+   "steam_appid": 244630,
+   "url": "https://gethighball.com/games/neotokyo/",
+   "anticheat": {
+    "names": [
+     "VAC"
+    ],
+    "macVerdict": "warning"
+   }
+  },
+  {
    "id": "nested-lands",
    "title": "Nested Lands",
    "status": "community",
    "steam_appid": 2553040,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/nested-lands/"
+  },
+  {
+   "id": "neva",
+   "title": "Neva",
+   "status": "community",
+   "steam_appid": 2420660,
+   "url": "https://gethighball.com/games/neva/"
+  },
+  {
+   "id": "new-tales-from-the-borderlands",
+   "title": "New Tales from the Borderlands",
+   "status": "community",
+   "steam_appid": 1454970,
+   "url": "https://gethighball.com/games/new-tales-from-the-borderlands/"
   },
   {
    "id": "nier-replicant-ver-1-22474487139",
@@ -3066,11 +3993,31 @@
    "url": "https://gethighball.com/games/nippets/"
   },
   {
+   "id": "no-rest-for-the-wicked",
+   "title": "No Rest for the Wicked",
+   "status": "community",
+   "steam_appid": 1371980,
+   "url": "https://gethighball.com/games/no-rest-for-the-wicked/"
+  },
+  {
    "id": "no-im-not-a-human",
    "title": "No, I'm not a Human",
    "status": "community",
    "steam_appid": 3180070,
    "url": "https://gethighball.com/games/no-im-not-a-human/"
+  },
+  {
+   "id": "noita",
+   "title": "Noita",
+   "status": "community",
+   "steam_appid": 881100,
+   "url": "https://gethighball.com/games/noita/"
+  },
+  {
+   "id": "notitg",
+   "title": "NotITG",
+   "status": "community",
+   "url": "https://gethighball.com/games/notitg/"
   },
   {
    "id": "nova-lands",
@@ -3095,12 +4042,34 @@
    "url": "https://gethighball.com/games/nuclear-option/"
   },
   {
+   "id": "ocean-world-eden-crafters-prologue",
+   "title": "Ocean World: Eden Crafters Prologue",
+   "status": "community",
+   "steam_appid": 2811830,
+   "url": "https://gethighball.com/games/ocean-world-eden-crafters-prologue/",
+   "reportsProblems": true
+  },
+  {
+   "id": "off-axis-demo",
+   "title": "Off Axis Demo",
+   "status": "community",
+   "steam_appid": 5261640,
+   "url": "https://gethighball.com/games/off-axis-demo/"
+  },
+  {
    "id": "omori",
    "title": "OMORI",
    "status": "community",
    "steam_appid": 1150690,
    "renderer": "dxvk",
    "url": "https://gethighball.com/games/omori/"
+  },
+  {
+   "id": "onimusha-way-of-the-sword",
+   "title": "Onimusha: Way of the Sword",
+   "status": "community",
+   "steam_appid": 2638890,
+   "url": "https://gethighball.com/games/onimusha-way-of-the-sword/"
   },
   {
    "id": "onimusha-way-of-the-sword-benchmark",
@@ -3119,11 +4088,25 @@
    "url": "https://gethighball.com/games/onimusha-way-of-the-sword-demo/"
   },
   {
+   "id": "oninaki-demo",
+   "title": "ONINAKI Demo",
+   "status": "community",
+   "steam_appid": 1047000,
+   "url": "https://gethighball.com/games/oninaki-demo/"
+  },
+  {
    "id": "operation-flashpoint-dragon-rising",
    "title": "Operation Flashpoint: Dragon Rising",
    "status": "community",
    "steam_appid": 12830,
    "url": "https://gethighball.com/games/operation-flashpoint-dragon-rising/"
+  },
+  {
+   "id": "operator",
+   "title": "OPERATOR",
+   "status": "community",
+   "steam_appid": 1913370,
+   "url": "https://gethighball.com/games/operator/"
   },
   {
    "id": "orcs-must-die",
@@ -3160,6 +4143,20 @@
    "steam_appid": 1071140,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/orx/"
+  },
+  {
+   "id": "out-of-sight",
+   "title": "Out of Sight",
+   "status": "community",
+   "steam_appid": 2526310,
+   "url": "https://gethighball.com/games/out-of-sight/"
+  },
+  {
+   "id": "outdrive",
+   "title": "OutDrive",
+   "status": "community",
+   "steam_appid": 441870,
+   "url": "https://gethighball.com/games/outdrive/"
   },
   {
    "id": "outer-wilds",
@@ -3216,11 +4213,39 @@
    "url": "https://gethighball.com/games/paperback-the-game/"
   },
   {
+   "id": "paradise-killer",
+   "title": "Paradise Killer",
+   "status": "community",
+   "steam_appid": 1160220,
+   "url": "https://gethighball.com/games/paradise-killer/"
+  },
+  {
+   "id": "particle-mace",
+   "title": "PARTICLE MACE",
+   "status": "community",
+   "steam_appid": 295690,
+   "url": "https://gethighball.com/games/particle-mace/"
+  },
+  {
+   "id": "path-of-achra",
+   "title": "Path of Achra",
+   "status": "community",
+   "steam_appid": 2128270,
+   "url": "https://gethighball.com/games/path-of-achra/"
+  },
+  {
    "id": "path-of-building-poe2",
    "title": "Path of Building Community Fork (Path of Exile 2)",
    "status": "community",
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/path-of-building-poe2/"
+  },
+  {
+   "id": "path-of-exile",
+   "title": "Path of Exile",
+   "status": "community",
+   "steam_appid": 238960,
+   "url": "https://gethighball.com/games/path-of-exile/"
   },
   {
    "id": "path-of-exile-2",
@@ -3229,6 +4254,13 @@
    "steam_appid": 2694490,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/path-of-exile-2/"
+  },
+  {
+   "id": "payday-2",
+   "title": "PAYDAY 2",
+   "status": "community",
+   "steam_appid": 218620,
+   "url": "https://gethighball.com/games/payday-2/"
   },
   {
    "id": "payday-3",
@@ -3243,6 +4275,20 @@
    "status": "community",
    "steam_appid": 24240,
    "url": "https://gethighball.com/games/payday-the-heist/"
+  },
+  {
+   "id": "per-aspera",
+   "title": "Per Aspera",
+   "status": "community",
+   "steam_appid": 803050,
+   "url": "https://gethighball.com/games/per-aspera/"
+  },
+  {
+   "id": "persona-3-portable",
+   "title": "Persona 3 Portable",
+   "status": "community",
+   "steam_appid": 1809700,
+   "url": "https://gethighball.com/games/persona-3-portable/"
   },
   {
    "id": "persona-3-reload",
@@ -3316,11 +4362,26 @@
    "url": "https://gethighball.com/games/planet-coaster-2/"
   },
   {
+   "id": "planet-of-lana",
+   "title": "Planet of Lana",
+   "status": "community",
+   "steam_appid": 1608230,
+   "url": "https://gethighball.com/games/planet-of-lana/"
+  },
+  {
    "id": "planet-zoo-2",
    "title": "Planet Zoo 2",
    "status": "community",
    "steam_appid": 3219030,
-   "url": "https://gethighball.com/games/planet-zoo-2/"
+   "url": "https://gethighball.com/games/planet-zoo-2/",
+   "reportsProblems": true
+  },
+  {
+   "id": "playrooms",
+   "title": "Playrooms",
+   "status": "community",
+   "steam_appid": 5037510,
+   "url": "https://gethighball.com/games/playrooms/"
   },
   {
    "id": "poppy-playtime",
@@ -3328,6 +4389,20 @@
    "status": "community",
    "steam_appid": 1721470,
    "url": "https://gethighball.com/games/poppy-playtime/"
+  },
+  {
+   "id": "portal-first-slice",
+   "title": "Portal: First Slice",
+   "status": "community",
+   "steam_appid": 410,
+   "url": "https://gethighball.com/games/portal-first-slice/"
+  },
+  {
+   "id": "potato-please",
+   "title": "Potato Please",
+   "status": "community",
+   "steam_appid": 5266240,
+   "url": "https://gethighball.com/games/potato-please/"
   },
   {
    "id": "potion-craft-alchemist-simulator",
@@ -3411,12 +4486,46 @@
    "url": "https://gethighball.com/games/prominence-poker/"
   },
   {
+   "id": "psalm",
+   "title": "Psalm",
+   "status": "community",
+   "url": "https://gethighball.com/games/psalm/"
+  },
+  {
+   "id": "psycho-sleuth",
+   "title": "Psycho-Sleuth",
+   "status": "community",
+   "steam_appid": 3432860,
+   "url": "https://gethighball.com/games/psycho-sleuth/"
+  },
+  {
+   "id": "pyramids-and-aliens-escape-room",
+   "title": "Pyramids and Aliens: Escape Room",
+   "status": "community",
+   "steam_appid": 2833640,
+   "url": "https://gethighball.com/games/pyramids-and-aliens-escape-room/"
+  },
+  {
    "id": "quake-ii",
    "title": "Quake II",
    "status": "community",
    "steam_appid": 2320,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/quake-ii/"
+  },
+  {
+   "id": "queens-domain",
+   "title": "Queen's Domain",
+   "status": "community",
+   "steam_appid": 1799840,
+   "url": "https://gethighball.com/games/queens-domain/"
+  },
+  {
+   "id": "queens-domain-demo",
+   "title": "Queen's Domain Demo",
+   "status": "community",
+   "steam_appid": 4081520,
+   "url": "https://gethighball.com/games/queens-domain-demo/"
   },
   {
    "id": "rave-real-time-audio-visual-experience",
@@ -3450,6 +4559,13 @@
    "url": "https://gethighball.com/games/raft/"
   },
   {
+   "id": "ragbrawl",
+   "title": "RagBrawl",
+   "status": "community",
+   "steam_appid": 2300280,
+   "url": "https://gethighball.com/games/ragbrawl/"
+  },
+  {
    "id": "rain-world",
    "title": "Rain World",
    "status": "community",
@@ -3479,11 +4595,46 @@
    "url": "https://gethighball.com/games/re-volt/"
   },
   {
+   "id": "ready-or-not",
+   "title": "Ready or Not",
+   "status": "community",
+   "steam_appid": 1144200,
+   "url": "https://gethighball.com/games/ready-or-not/"
+  },
+  {
+   "id": "reblade-the-death-spiral-demo",
+   "title": "ReBlade: The Death Spiral Demo",
+   "status": "community",
+   "steam_appid": 4513800,
+   "url": "https://gethighball.com/games/reblade-the-death-spiral-demo/"
+  },
+  {
+   "id": "red-dead-redemption",
+   "title": "Red Dead Redemption",
+   "status": "community",
+   "steam_appid": 2668510,
+   "url": "https://gethighball.com/games/red-dead-redemption/"
+  },
+  {
+   "id": "regular-factory-escape-room",
+   "title": "Regular Factory: Escape Room",
+   "status": "community",
+   "steam_appid": 1790490,
+   "url": "https://gethighball.com/games/regular-factory-escape-room/"
+  },
+  {
    "id": "relaxing-simulator",
    "title": "Relaxing Simulator",
    "status": "community",
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/relaxing-simulator/"
+  },
+  {
+   "id": "replaced",
+   "title": "REPLACED",
+   "status": "community",
+   "steam_appid": 1663850,
+   "url": "https://gethighball.com/games/replaced/"
   },
   {
    "id": "resident-evil",
@@ -3518,6 +4669,13 @@
    "url": "https://gethighball.com/games/resident-evil-4-remake/"
   },
   {
+   "id": "resident-evil-5",
+   "title": "Resident Evil 5",
+   "status": "community",
+   "steam_appid": 21690,
+   "url": "https://gethighball.com/games/resident-evil-5/"
+  },
+  {
    "id": "resident-evil-6-benchmark",
    "title": "Resident Evil 6 Benchmark Tool",
    "status": "community",
@@ -3531,6 +4689,12 @@
    "steam_appid": 1196590,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/resident-evil-village/"
+  },
+  {
+   "id": "reskate",
+   "title": "ReSkate",
+   "status": "community",
+   "url": "https://gethighball.com/games/reskate/"
   },
   {
    "id": "restory-chill-electronics-repairs",
@@ -3608,6 +4772,13 @@
    "url": "https://gethighball.com/games/rogue-wizards/"
   },
   {
+   "id": "rollercoaster-tycoon-3-complete-edition",
+   "title": "RollerCoaster Tycoon 3: Complete Edition",
+   "status": "community",
+   "steam_appid": 1368820,
+   "url": "https://gethighball.com/games/rollercoaster-tycoon-3-complete-edition/"
+  },
+  {
    "id": "romance-of-the-three-kingdoms-xi-with-power-up-kit",
    "title": "Romance of the Three Kingdoms XI with Power Up Kit",
    "status": "community",
@@ -3646,11 +4817,24 @@
    "url": "https://gethighball.com/games/s-t-a-l-k-e-r-shadow-of-chernobyl/"
   },
   {
+   "id": "saiko-no-sutoka",
+   "title": "Saiko no sutoka",
+   "status": "community",
+   "steam_appid": 1546860,
+   "url": "https://gethighball.com/games/saiko-no-sutoka/"
+  },
+  {
    "id": "saints-row-iv-re-elected",
    "title": "Saints Row IV: Re-Elected",
    "status": "community",
    "steam_appid": 206420,
    "url": "https://gethighball.com/games/saints-row-iv-re-elected/"
+  },
+  {
+   "id": "samurai-jack-battle-through-time",
+   "title": "Samurai Jack: Battle Through Time",
+   "status": "community",
+   "url": "https://gethighball.com/games/samurai-jack-battle-through-time/"
   },
   {
    "id": "sandcastle",
@@ -3715,6 +4899,13 @@
    "url": "https://gethighball.com/games/sea-power/"
   },
   {
+   "id": "seasons-after-fall",
+   "title": "Seasons after Fall",
+   "status": "community",
+   "steam_appid": 366320,
+   "url": "https://gethighball.com/games/seasons-after-fall/"
+  },
+  {
    "id": "seven-knights-rebirth",
    "title": "Seven Knights Re:BIRTH",
    "status": "community",
@@ -3734,6 +4925,13 @@
    "status": "community",
    "steam_appid": 547490,
    "url": "https://gethighball.com/games/shadow-tactics-blades-of-the-shogun-demo/"
+  },
+  {
+   "id": "shape-of-dreams",
+   "title": "Shape of Dreams",
+   "status": "community",
+   "steam_appid": 2444750,
+   "url": "https://gethighball.com/games/shape-of-dreams/"
   },
   {
    "id": "sheltered",
@@ -3790,11 +4988,48 @@
    "url": "https://gethighball.com/games/shop-titans/"
   },
   {
+   "id": "civilization-iii-complete",
+   "title": "Sid Meier's Civilization III Complete",
+   "status": "community",
+   "steam_appid": 3910,
+   "url": "https://gethighball.com/games/civilization-iii-complete/",
+   "reportsProblems": true
+  },
+  {
+   "id": "civilization-iv",
+   "title": "Sid Meier's Civilization IV",
+   "status": "community",
+   "steam_appid": 3900,
+   "url": "https://gethighball.com/games/civilization-iv/"
+  },
+  {
+   "id": "civilization-vi",
+   "title": "Sid Meier's Civilization VI",
+   "status": "community",
+   "steam_appid": 289070,
+   "renderer": "dxmt",
+   "url": "https://gethighball.com/games/civilization-vi/"
+  },
+  {
    "id": "sifu",
    "title": "Sifu",
    "status": "community",
    "steam_appid": 2138710,
    "url": "https://gethighball.com/games/sifu/"
+  },
+  {
+   "id": "signalis",
+   "title": "SIGNALIS",
+   "status": "community",
+   "steam_appid": 1262350,
+   "url": "https://gethighball.com/games/signalis/"
+  },
+  {
+   "id": "silent-hill-townfall",
+   "title": "SILENT HILL: Townfall",
+   "status": "community",
+   "steam_appid": 1636440,
+   "url": "https://gethighball.com/games/silent-hill-townfall/"
   },
   {
    "id": "silver-pines",
@@ -3817,7 +5052,22 @@
    "title": "Skillshot City",
    "status": "community",
    "steam_appid": 308600,
-   "url": "https://gethighball.com/games/skillshot-city/"
+   "url": "https://gethighball.com/games/skillshot-city/",
+   "reportsProblems": true
+  },
+  {
+   "id": "slap-em-up",
+   "title": "Slap 'em UP!",
+   "status": "community",
+   "steam_appid": 3703520,
+   "url": "https://gethighball.com/games/slap-em-up/"
+  },
+  {
+   "id": "slashzero-demo",
+   "title": "SlashZero Demo",
+   "status": "community",
+   "steam_appid": 5099550,
+   "url": "https://gethighball.com/games/slashzero-demo/"
   },
   {
    "id": "slay-the-spire",
@@ -3877,6 +5127,20 @@
    "url": "https://gethighball.com/games/sobosuba-demo/"
   },
   {
+   "id": "solar-expanse-demo",
+   "title": "Solar Expanse Demo",
+   "status": "community",
+   "steam_appid": 2517120,
+   "url": "https://gethighball.com/games/solar-expanse-demo/"
+  },
+  {
+   "id": "solarpunk",
+   "title": "Solarpunk",
+   "status": "community",
+   "steam_appid": 1805110,
+   "url": "https://gethighball.com/games/solarpunk/"
+  },
+  {
    "id": "sonic-adventure-2",
    "title": "Sonic Adventure 2",
    "status": "community",
@@ -3890,6 +5154,19 @@
    "steam_appid": 584400,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/sonic-mania/"
+  },
+  {
+   "id": "sonic-rumble-party",
+   "title": "Sonic Rumble Party",
+   "status": "community",
+   "steam_appid": 2951690,
+   "url": "https://gethighball.com/games/sonic-rumble-party/",
+   "anticheat": {
+    "names": [
+     "Uncheater"
+    ],
+    "macVerdict": "warning"
+   }
   },
   {
    "id": "sos-ops",
@@ -3908,12 +5185,34 @@
    "url": "https://gethighball.com/games/soulstice/"
   },
   {
+   "id": "sounds-of-her-love",
+   "title": "Sounds of Her Love",
+   "status": "community",
+   "steam_appid": 603880,
+   "url": "https://gethighball.com/games/sounds-of-her-love/"
+  },
+  {
+   "id": "south-of-midnight",
+   "title": "South of Midnight",
+   "status": "community",
+   "steam_appid": 1934570,
+   "url": "https://gethighball.com/games/south-of-midnight/"
+  },
+  {
    "id": "south-park-the-stick-of-truth",
    "title": "South Park: The Stick of Truth",
    "status": "community",
    "steam_appid": 213670,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/south-park-the-stick-of-truth/"
+  },
+  {
+   "id": "space-engineers-2",
+   "title": "Space Engineers 2",
+   "status": "community",
+   "steam_appid": 1133870,
+   "url": "https://gethighball.com/games/space-engineers-2/",
+   "reportsProblems": true
   },
   {
    "id": "space-grunts-chrono-shard",
@@ -3968,11 +5267,25 @@
    "url": "https://gethighball.com/games/spore-galactic-adventures/"
   },
   {
+   "id": "sprocket",
+   "title": "Sprocket",
+   "status": "community",
+   "steam_appid": 1674170,
+   "url": "https://gethighball.com/games/sprocket/"
+  },
+  {
    "id": "stacking",
    "title": "Stacking",
    "status": "community",
    "steam_appid": 115110,
    "url": "https://gethighball.com/games/stacking/"
+  },
+  {
+   "id": "star-wars-battlefront-ii",
+   "title": "STAR WARS Battlefront II",
+   "status": "community",
+   "steam_appid": 1237950,
+   "url": "https://gethighball.com/games/star-wars-battlefront-ii/"
   },
   {
    "id": "star-wars-empire-at-war-gold-pack",
@@ -3981,6 +5294,28 @@
    "steam_appid": 32470,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/star-wars-empire-at-war-gold-pack/"
+  },
+  {
+   "id": "star-wars-jedi-survivor",
+   "title": "STAR WARS Jedi: Survivor",
+   "status": "community",
+   "steam_appid": 1774580,
+   "url": "https://gethighball.com/games/star-wars-jedi-survivor/"
+  },
+  {
+   "id": "star-wars-zero-company",
+   "title": "STAR WARS Zero Company",
+   "status": "community",
+   "steam_appid": 2075800,
+   "url": "https://gethighball.com/games/star-wars-zero-company/"
+  },
+  {
+   "id": "star-wars-galactic-racer",
+   "title": "STAR WARS: Galactic Racer",
+   "status": "community",
+   "steam_appid": 4078430,
+   "url": "https://gethighball.com/games/star-wars-galactic-racer/",
+   "reportsProblems": true
   },
   {
    "id": "star-wars-galaxy-of-heroes",
@@ -4034,6 +5369,14 @@
    "url": "https://gethighball.com/games/story-of-seasons-friends-of-mineral-town/"
   },
   {
+   "id": "stranded-with-you-demo",
+   "title": "Stranded with You Demo",
+   "status": "community",
+   "steam_appid": 4339760,
+   "url": "https://gethighball.com/games/stranded-with-you-demo/",
+   "reportsProblems": true
+  },
+  {
    "id": "stray",
    "title": "Stray",
    "status": "community",
@@ -4064,6 +5407,13 @@
    }
   },
   {
+   "id": "stronghold-crusader-hd",
+   "title": "Stronghold Crusader HD",
+   "status": "community",
+   "steam_appid": 40970,
+   "url": "https://gethighball.com/games/stronghold-crusader-hd/"
+  },
+  {
    "id": "stumble-guys",
    "title": "Stumble Guys",
    "status": "community",
@@ -4079,12 +5429,46 @@
    "url": "https://gethighball.com/games/subnautica/"
   },
   {
+   "id": "subnautica-2",
+   "title": "Subnautica 2",
+   "status": "community",
+   "steam_appid": 1962700,
+   "url": "https://gethighball.com/games/subnautica-2/"
+  },
+  {
+   "id": "suicide-squad-kill-the-justice-league",
+   "title": "Suicide Squad: Kill the Justice League",
+   "status": "community",
+   "steam_appid": 315210,
+   "url": "https://gethighball.com/games/suicide-squad-kill-the-justice-league/",
+   "anticheat": {
+    "names": [
+     "Easy Anti-Cheat"
+    ],
+    "macVerdict": "warning"
+   }
+  },
+  {
    "id": "super-meat-boy",
    "title": "Super Meat Boy",
    "status": "community",
    "steam_appid": 40800,
    "renderer": "wined3d",
    "url": "https://gethighball.com/games/super-meat-boy/"
+  },
+  {
+   "id": "super-robot-wars-v",
+   "title": "SUPER ROBOT WARS V",
+   "status": "community",
+   "steam_appid": 1031500,
+   "url": "https://gethighball.com/games/super-robot-wars-v/"
+  },
+  {
+   "id": "syberia-remastered",
+   "title": "Syberia - Remastered",
+   "status": "community",
+   "steam_appid": 3660220,
+   "url": "https://gethighball.com/games/syberia-remastered/"
   },
   {
    "id": "tale-of-wuxia",
@@ -4160,6 +5544,13 @@
    "url": "https://gethighball.com/games/tekken-7/"
   },
   {
+   "id": "tekken-8",
+   "title": "TEKKEN 8",
+   "status": "community",
+   "steam_appid": 1778820,
+   "url": "https://gethighball.com/games/tekken-8/"
+  },
+  {
    "id": "tell-me-why",
    "title": "Tell Me Why",
    "status": "community",
@@ -4176,12 +5567,39 @@
    "url": "https://gethighball.com/games/tempest-rising/"
   },
   {
+   "id": "terminal-esc",
+   "title": "Terminal ESC",
+   "status": "community",
+   "steam_appid": 2809460,
+   "url": "https://gethighball.com/games/terminal-esc/"
+  },
+  {
+   "id": "terra-invicta",
+   "title": "Terra Invicta",
+   "status": "community",
+   "steam_appid": 1176470,
+   "url": "https://gethighball.com/games/terra-invicta/"
+  },
+  {
    "id": "terra-nil",
    "title": "Terra Nil",
    "status": "community",
    "steam_appid": 1593030,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/terra-nil/"
+  },
+  {
+   "id": "terrascape",
+   "title": "Terrascape",
+   "status": "community",
+   "url": "https://gethighball.com/games/terrascape/"
+  },
+  {
+   "id": "thalassomania-demo",
+   "title": "Thalassomania Demo",
+   "status": "community",
+   "steam_appid": 5407340,
+   "url": "https://gethighball.com/games/thalassomania-demo/"
   },
   {
    "id": "the-alters",
@@ -4197,6 +5615,13 @@
    "steam_appid": 2837600,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/the-alto-collection/"
+  },
+  {
+   "id": "the-artisan-of-glimmith",
+   "title": "The Artisan of Glimmith",
+   "status": "community",
+   "steam_appid": 4160210,
+   "url": "https://gethighball.com/games/the-artisan-of-glimmith/"
   },
   {
    "id": "the-binding-of-isaac-rebirth",
@@ -4215,6 +5640,13 @@
    "url": "https://gethighball.com/games/the-blood-of-dawnwalker/"
   },
   {
+   "id": "the-crew-2",
+   "title": "The Crew 2",
+   "status": "community",
+   "steam_appid": 646910,
+   "url": "https://gethighball.com/games/the-crew-2/"
+  },
+  {
    "id": "the-dig",
    "title": "The Dig",
    "status": "community",
@@ -4228,6 +5660,13 @@
    "steam_appid": 489830,
    "renderer": "dxvk",
    "url": "https://gethighball.com/games/the-elder-scrolls-v-skyrim-special-edition/"
+  },
+  {
+   "id": "the-exit-8",
+   "title": "The Exit 8",
+   "status": "community",
+   "steam_appid": 2653790,
+   "url": "https://gethighball.com/games/the-exit-8/"
   },
   {
    "id": "the-fairy-tale-of-holy-knight-ricca",
@@ -4244,12 +5683,40 @@
    "url": "https://gethighball.com/games/the-farmer-was-replaced/"
   },
   {
+   "id": "the-forest",
+   "title": "The Forest",
+   "status": "community",
+   "steam_appid": 242760,
+   "url": "https://gethighball.com/games/the-forest/"
+  },
+  {
    "id": "the-fruit-of-grisaia",
    "title": "The Fruit of Grisaia",
    "status": "community",
    "steam_appid": 345610,
    "renderer": "wined3d",
    "url": "https://gethighball.com/games/the-fruit-of-grisaia/"
+  },
+  {
+   "id": "the-invincible",
+   "title": "The Invincible",
+   "status": "community",
+   "steam_appid": 731040,
+   "url": "https://gethighball.com/games/the-invincible/"
+  },
+  {
+   "id": "the-killing-antidote-demo",
+   "title": "The Killing Antidote Demo",
+   "status": "community",
+   "steam_appid": 3274030,
+   "url": "https://gethighball.com/games/the-killing-antidote-demo/"
+  },
+  {
+   "id": "the-king-of-fighters-97-global-match",
+   "title": "THE KING OF FIGHTERS '97 GLOBAL MATCH",
+   "status": "community",
+   "steam_appid": 702120,
+   "url": "https://gethighball.com/games/the-king-of-fighters-97-global-match/"
   },
   {
    "id": "the-last-caretaker",
@@ -4265,6 +5732,13 @@
    "status": "community",
    "steam_appid": 3690030,
    "url": "https://gethighball.com/games/the-last-gas-station/"
+  },
+  {
+   "id": "the-mageseeker-a-league-of-legends-story",
+   "title": "The Mageseeker: A League of Legends Story",
+   "status": "community",
+   "steam_appid": 1457080,
+   "url": "https://gethighball.com/games/the-mageseeker-a-league-of-legends-story/"
   },
   {
    "id": "the-mortuary-assistant",
@@ -4305,12 +5779,26 @@
    "url": "https://gethighball.com/games/the-sims-2-legacy-collection/"
   },
   {
+   "id": "the-stanley-parable",
+   "title": "The Stanley Parable",
+   "status": "community",
+   "steam_appid": 221910,
+   "url": "https://gethighball.com/games/the-stanley-parable/"
+  },
+  {
    "id": "the-surge",
    "title": "The Surge",
    "status": "community",
    "steam_appid": 378540,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/the-surge/"
+  },
+  {
+   "id": "the-talos-principle",
+   "title": "The Talos Principle",
+   "status": "community",
+   "steam_appid": 257510,
+   "url": "https://gethighball.com/games/the-talos-principle/"
   },
   {
    "id": "the-talos-principle-2",
@@ -4321,11 +5809,25 @@
    "url": "https://gethighball.com/games/the-talos-principle-2/"
   },
   {
+   "id": "the-thing-remastered",
+   "title": "The Thing: Remastered",
+   "status": "community",
+   "steam_appid": 2958970,
+   "url": "https://gethighball.com/games/the-thing-remastered/"
+  },
+  {
+   "id": "the-ultimate-doom",
+   "title": "The Ultimate Doom",
+   "status": "community",
+   "url": "https://gethighball.com/games/the-ultimate-doom/"
+  },
+  {
    "id": "the-walking-dead",
    "title": "The Walking Dead",
    "status": "community",
    "steam_appid": 207610,
-   "url": "https://gethighball.com/games/the-walking-dead/"
+   "url": "https://gethighball.com/games/the-walking-dead/",
+   "reportsProblems": true
   },
   {
    "id": "the-witcher-3-wild-hunt",
@@ -4344,6 +5846,20 @@
    "url": "https://gethighball.com/games/the-wolf-among-us/"
   },
   {
+   "id": "theme-hospital",
+   "title": "Theme Hospital",
+   "status": "community",
+   "steam_appid": 2229820,
+   "url": "https://gethighball.com/games/theme-hospital/"
+  },
+  {
+   "id": "thief",
+   "title": "THIEF: Definitive Edition",
+   "status": "community",
+   "steam_appid": 239160,
+   "url": "https://gethighball.com/games/thief/"
+  },
+  {
    "id": "this-war-of-mine",
    "title": "This War of Mine",
    "status": "community",
@@ -4352,11 +5868,32 @@
    "url": "https://gethighball.com/games/this-war-of-mine/"
   },
   {
+   "id": "throne-and-liberty",
+   "title": "THRONE AND LIBERTY",
+   "status": "community",
+   "steam_appid": 2429640,
+   "url": "https://gethighball.com/games/throne-and-liberty/",
+   "reportsProblems": true,
+   "anticheat": {
+    "names": [
+     "NCGuard"
+    ],
+    "macVerdict": "warning"
+   }
+  },
+  {
    "id": "tiny-glade",
    "title": "Tiny Glade",
    "status": "community",
    "steam_appid": 2198150,
    "url": "https://gethighball.com/games/tiny-glade/"
+  },
+  {
+   "id": "tiny-terraces",
+   "title": "Tiny Terraces",
+   "status": "community",
+   "steam_appid": 3136330,
+   "url": "https://gethighball.com/games/tiny-terraces/"
   },
   {
    "id": "titanfall-2",
@@ -4379,6 +5916,13 @@
    "steam_appid": 2925280,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/tlatoani-aztec-cities-demo/"
+  },
+  {
+   "id": "toem",
+   "title": "TOEM",
+   "status": "community",
+   "steam_appid": 1307580,
+   "url": "https://gethighball.com/games/toem/"
   },
   {
    "id": "together-after-dark",
@@ -4453,7 +5997,8 @@
    "title": "Touhou Danmaku Kagura Phantasia Lost",
    "status": "community",
    "steam_appid": 2190220,
-   "url": "https://gethighball.com/games/touhou-danmaku-kagura-phantasia-lost/"
+   "url": "https://gethighball.com/games/touhou-danmaku-kagura-phantasia-lost/",
+   "reportsProblems": true
   },
   {
    "id": "tower-dominion",
@@ -4517,12 +6062,26 @@
    "url": "https://gethighball.com/games/trash-goblin/"
   },
   {
+   "id": "trepang2",
+   "title": "Trepang2",
+   "status": "community",
+   "steam_appid": 1164940,
+   "url": "https://gethighball.com/games/trepang2/"
+  },
+  {
    "id": "triangle-strategy",
    "title": "TRIANGLE STRATEGY",
    "status": "community",
    "steam_appid": 1850510,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/triangle-strategy/"
+  },
+  {
+   "id": "trinity-fusion",
+   "title": "Trinity Fusion",
+   "status": "community",
+   "steam_appid": 1911360,
+   "url": "https://gethighball.com/games/trinity-fusion/"
   },
   {
    "id": "turnip-boy-robs-a-bank",
@@ -4593,6 +6152,13 @@
    "url": "https://gethighball.com/games/upload-labs/"
   },
   {
+   "id": "v-rising",
+   "title": "V Rising",
+   "status": "community",
+   "steam_appid": 1604030,
+   "url": "https://gethighball.com/games/v-rising/"
+  },
+  {
    "id": "vampire-survivors",
    "title": "Vampire Survivors",
    "status": "community",
@@ -4616,11 +6182,19 @@
    "url": "https://gethighball.com/games/vaultbreakers/"
   },
   {
+   "id": "vellum",
+   "title": "Vellum",
+   "status": "community",
+   "steam_appid": 917950,
+   "url": "https://gethighball.com/games/vellum/"
+  },
+  {
    "id": "velocity-ultra",
    "title": "Velocity Ultra",
    "status": "community",
    "steam_appid": 244890,
-   "url": "https://gethighball.com/games/velocity-ultra/"
+   "url": "https://gethighball.com/games/velocity-ultra/",
+   "reportsProblems": true
   },
   {
    "id": "viewfinder",
@@ -4644,6 +6218,13 @@
    }
   },
   {
+   "id": "visage",
+   "title": "Visage",
+   "status": "community",
+   "steam_appid": 594330,
+   "url": "https://gethighball.com/games/visage/"
+  },
+  {
    "id": "vital-decisions-demo",
    "title": "Vital Decisions Demo",
    "status": "community",
@@ -4663,6 +6244,13 @@
    "status": "community",
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/voices-of-the-void/"
+  },
+  {
+   "id": "voidwrought",
+   "title": "Voidwrought",
+   "status": "community",
+   "steam_appid": 2014550,
+   "url": "https://gethighball.com/games/voidwrought/"
   },
   {
    "id": "wanderburg",
@@ -4688,12 +6276,26 @@
    "url": "https://gethighball.com/games/war-robots/"
   },
   {
+   "id": "warhammer-40000-battlesector",
+   "title": "Warhammer 40,000: Battlesector",
+   "status": "community",
+   "steam_appid": 1295500,
+   "url": "https://gethighball.com/games/warhammer-40000-battlesector/"
+  },
+  {
    "id": "warhammer-40000-boltgun",
    "title": "Warhammer 40,000: Boltgun",
    "status": "community",
    "steam_appid": 2005010,
    "renderer": "dxmt",
    "url": "https://gethighball.com/games/warhammer-40000-boltgun/"
+  },
+  {
+   "id": "warhammer-survivors-demo",
+   "title": "Warhammer Survivors Demo",
+   "status": "community",
+   "steam_appid": 4499200,
+   "url": "https://gethighball.com/games/warhammer-survivors-demo/"
   },
   {
    "id": "warhammer-dark-omen-classic",
@@ -4717,11 +6319,47 @@
    }
   },
   {
+   "id": "watchmen-the-end-is-nigh",
+   "title": "Watchmen: The End is Nigh",
+   "status": "community",
+   "steam_appid": 21010,
+   "url": "https://gethighball.com/games/watchmen-the-end-is-nigh/",
+   "reportsProblems": true
+  },
+  {
+   "id": "water-td",
+   "title": "Water TD",
+   "status": "community",
+   "steam_appid": 5295330,
+   "url": "https://gethighball.com/games/water-td/"
+  },
+  {
+   "id": "waterpark-simulator",
+   "title": "Waterpark Simulator",
+   "status": "community",
+   "steam_appid": 3293260,
+   "url": "https://gethighball.com/games/waterpark-simulator/"
+  },
+  {
+   "id": "wavetale",
+   "title": "Wavetale",
+   "status": "community",
+   "steam_appid": 1823930,
+   "url": "https://gethighball.com/games/wavetale/"
+  },
+  {
    "id": "wayfinder",
    "title": "Wayfinder",
    "status": "community",
    "steam_appid": 1171690,
    "url": "https://gethighball.com/games/wayfinder/"
+  },
+  {
+   "id": "weakless",
+   "title": "Weakless",
+   "status": "community",
+   "steam_appid": 1072620,
+   "url": "https://gethighball.com/games/weakless/"
   },
   {
    "id": "well-dweller",
@@ -4748,12 +6386,33 @@
    "url": "https://gethighball.com/games/where-winds-meet/"
   },
   {
+   "id": "while-true-learn",
+   "title": "while True: learn()",
+   "status": "community",
+   "steam_appid": 619150,
+   "url": "https://gethighball.com/games/while-true-learn/"
+  },
+  {
    "id": "will-you-snail",
    "title": "Will You Snail?",
    "status": "community",
    "steam_appid": 1115050,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/will-you-snail/"
+  },
+  {
+   "id": "windrose",
+   "title": "Windrose",
+   "status": "community",
+   "steam_appid": 3041230,
+   "url": "https://gethighball.com/games/windrose/"
+  },
+  {
+   "id": "winter-burrow",
+   "title": "Winter Burrow",
+   "status": "community",
+   "steam_appid": 3008740,
+   "url": "https://gethighball.com/games/winter-burrow/"
   },
   {
    "id": "wobbly-life",
@@ -4808,12 +6467,40 @@
    "url": "https://gethighball.com/games/wrath-aeon-of-ruin/"
   },
   {
+   "id": "wwe-2k25",
+   "title": "WWE 2K25",
+   "status": "community",
+   "steam_appid": 2878960,
+   "url": "https://gethighball.com/games/wwe-2k25/"
+  },
+  {
+   "id": "xcom-enemy-unknown",
+   "title": "XCOM: Enemy Unknown",
+   "status": "community",
+   "steam_appid": 200510,
+   "url": "https://gethighball.com/games/xcom-enemy-unknown/"
+  },
+  {
    "id": "yakuza-0-directors-cut",
    "title": "Yakuza 0 Director's Cut",
    "status": "community",
    "steam_appid": 2988580,
    "renderer": "d3dmetal",
    "url": "https://gethighball.com/games/yakuza-0-directors-cut/"
+  },
+  {
+   "id": "yakuza-kiwami",
+   "title": "Yakuza Kiwami",
+   "status": "community",
+   "steam_appid": 3717330,
+   "url": "https://gethighball.com/games/yakuza-kiwami/"
+  },
+  {
+   "id": "yakuza-kiwami-2",
+   "title": "Yakuza Kiwami 2",
+   "status": "community",
+   "steam_appid": 3717340,
+   "url": "https://gethighball.com/games/yakuza-kiwami-2/"
   },
   {
    "id": "yandere-simulator",
@@ -5011,6 +6698,19 @@
     "names": [
      "FairFight",
      "EA anticheat"
+    ],
+    "macVerdict": "blocked"
+   }
+  },
+  {
+   "id": "bodycam",
+   "title": "Bodycam",
+   "status": "blocked-anticheat",
+   "steam_appid": 2406770,
+   "url": "https://gethighball.com/games/bodycam/",
+   "anticheat": {
+    "names": [
+     "Easy Anti-Cheat"
     ],
     "macVerdict": "blocked"
    }

@@ -28,6 +28,7 @@ public enum ProcessRunner {
                     process.terminate()
                     try? await Task.sleep(for: .milliseconds(300))
                     if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+                    try? handle.write(contentsOf: Data("\n[\(ISO8601DateFormatter().string(from: Date()))] stopped by Portnaut after \(Diagnostics.formatted(Date().timeIntervalSince(start))): took too long\n".utf8))
                     throw PortnautError("\(executable.lastPathComponent) took too long. Open Diagnostics for the log, then retry.")
                 }
                 try? await Task.sleep(for: .milliseconds(100))
@@ -35,6 +36,8 @@ public enum ProcessRunner {
             // isRunning becomes false after Foundation records the exit status.
             // waitUntilExit uses a thread-local run loop and can hang when an
             // async task resumes on a different thread from process.run().
+            // How the program ended, for reports: an installer that quits at once shows here.
+            try? handle.write(contentsOf: Data(Diagnostics.exitLine(status: process.terminationStatus, seconds: Date().timeIntervalSince(start)).utf8))
             guard allowFailure || process.terminationStatus == 0 else {
                 throw PortnautError("\(executable.lastPathComponent) exited with code \(process.terminationStatus). See \(log.lastPathComponent) in Diagnostics for details.")
             }

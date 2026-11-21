@@ -48,7 +48,11 @@ struct LibraryEntry: Identifiable, Equatable {
 
 @MainActor
 final class AppModel: ObservableObject {
-    let service = WineService()
+    /// Launch argument -PortnautHome <folder> uses another data folder, as portnaut-doctor's PORTNAUT_HOME does,
+    /// so a test build can run beside the real Portnaut without touching its bottles.
+    let service = WineService(paths: PortnautPaths(root: UserDefaults.standard.string(forKey: "PortnautHome").map { URL(fileURLWithPath: $0, isDirectory: true) }))
+    /// Portnaut's own updates (Sparkle).
+    let appUpdater = AppUpdater()
     @Published var page: Page = Page(rawValue: UserDefaults.standard.string(forKey: "PortnautInitialPage") ?? "") ?? .library
     @Published var library = Library()
     @Published var selectedBottleID: String? = UserDefaults.standard.string(forKey: "PortnautInitialBottle")
@@ -57,6 +61,16 @@ final class AppModel: ObservableObject {
     @Published var progress = 0.0
     @Published var message = "A few steps to your first game."
     @Published var error: String?
+    /// The Settings window's choices (settings.json in the data folder).
+    @Published var settings = PortnautSettings()
+    /// Cover art per library entry and kind, "<entry id>#hero" or "#card".
+    @Published var coverArt: [String: NSImage] = [:]
+    /// Entries whose cover art was looked for, so refresh doesn't read the disk every few seconds.
+    private var artworkChecked: Set<String> = []
+    /// Set when this launch is the first of a newer version: Portnaut says it was updated.
+    @Published var updatedTo: String?
+    /// Shown while a held update is about to install and Portnaut is about to close.
+    @Published var installingUpdate = false
     /// Bottles with a Windows session running.
     @Published var sessions: Set<String> = []
     @Published var runtimeReady = false
@@ -121,6 +135,25 @@ final class AppModel: ObservableObject {
     func ready(_ bottle: Bottle) -> Bool { readyBottles.contains(bottle.id) }
 
     init() {
+        appUpdater.isOccupied = { [weak self] in
+            MainActor.assumeIsolated { self.map { !SelfUpdate.mayInstallNow(runningBottles: $0.sessions.count, busy: $0.busy) } ?? false }
+        }
+        appUpdater.onInstallingSoon = { [weak self] in
+            MainActor.assumeIsolated {
+                self?.installingUpdate = true
+                self?.message = "Your games have closed, so Portnaut is installing its update. It reopens by itself in a few seconds."
+            }
+        }
+        // After an update, say so once: the window closing and reopening alone isn't clear.
+        let previous = UserDefaults.standard.string(forKey: "PortnautLastLaunchedVersion")
+        if let previous, previous != Publisher.version, Publisher.version.compare(previous, options: .numeric) == .orderedDescending {
+            updatedTo = Publisher.version
+        }
+        UserDefaults.standard.set(Publisher.version, forKey: "PortnautLastLaunchedVersion")
+        appUpdater.onWaiting = { [weak self] in
+            MainActor.assumeIsolated { self?.message = "A Portnaut update is ready. It installs when your games have closed." }
+        }
+        settings = service.settings
         refresh()
         loadCompatibility()
         updateChannel = service.updateChannel
@@ -182,7 +215,55 @@ final class AppModel: ObservableObject {
         if let attributes = try? FileManager.default.attributesOfFileSystem(forPath: NSHomeDirectory()), let free = attributes[.systemFreeSize] as? NSNumber {
             freeSpace = ByteCountFormatter.string(fromByteCount: free.int64Value, countStyle: .file)
         }
+        loadCoverArt()
+        // A Portnaut update held back by a running game installs once the game has ended.
+        appUpdater.installIfFree()
     }
+    // MARK: - Settings
+
+    func changeSettings(_ change: (inout PortnautSettings) -> Void) {
+        var updated = settings
+        change(&updated)
+        guard updated != settings else { return }
+        let artworkAllowed = updated.downloadSteamArtwork && !settings.downloadSteamArtwork
+        settings = updated
+        service.settings = updated
+        if artworkAllowed { artworkChecked.removeAll(); loadCoverArt() }
+    }
+    /// Settings › Performance recording. Saves only the setting: nothing else about the bottles changes.
+    func setRecordingInAllBottles(_ on: Bool) {
+        var changed = 0
+        for var bottle in library.bottles where bottle.options.recordPerformance != on {
+            bottle.options.recordPerformance = on
+            if (try? service.save(bottle)) != nil { changed += 1 }
+        }
+        refresh()
+        message = on ? "Performance recording is on in \(changed) more bottles." : "Performance recording is off in every bottle. Turn it on again per bottle in Bottles."
+    }
+
+    // MARK: - Cover art
+
+    /// Steam's images on the Mac first; downloads only when Settings allows them.
+    private func loadCoverArt() {
+        for entry in entries where !artworkChecked.contains(entry.id) {
+            artworkChecked.insert(entry.id)
+            var missing: [CoverArt.Kind] = []
+            for kind in CoverArt.Kind.allCases {
+                if let file = service.coverArt(for: entry.game, in: entry.bottle, kind: kind), let image = NSImage(contentsOf: file) {
+                    coverArt["\(entry.id)#\(kind.rawValue)"] = image
+                } else { missing.append(kind) }
+            }
+            guard settings.downloadSteamArtwork, entry.bottle.launcher == .steam, let appID = entry.game.steamAppID else { continue }
+            let wanted = missing.filter { !service.coverArtDownloadTried(appID: appID, kind: $0) }
+            guard !wanted.isEmpty else { continue }
+            Task { [service] in
+                for kind in wanted { await service.downloadCoverArt(appID: appID, kind: kind) }
+                artworkChecked.remove(entry.id)
+                loadCoverArt()
+            }
+        }
+    }
+
     func update(_ value: SetupProgress) { progress = value.fraction; message = value.message }
 
     // MARK: - Compatibility
@@ -274,7 +355,8 @@ final class AppModel: ObservableObject {
             sessions.remove(bottle.id); refresh()
         }
     }
-    private func startSession(_ bottle: Bottle, _ status: String, _ run: @escaping () async throws -> Void) {
+    /// `ended` replaces the usual "Session ended" line, for a step that leads somewhere.
+    private func startSession(_ bottle: Bottle, _ status: String, ended: String? = nil, _ run: @escaping () async throws -> Void) {
         guard !busy, !sessionActive(bottle) else { return }
         stopRequested.remove(bottle.id)
         sessions.insert(bottle.id)
@@ -282,7 +364,7 @@ final class AppModel: ObservableObject {
         Task {
             do {
                 try await run()
-                message = "Session ended. \(bottle.name) is ready for next time."
+                message = ended ?? "Session ended. \(bottle.name) is ready for next time."
             } catch {
                 if !stopRequested.contains(bottle.id) { self.error = error.localizedDescription }
             }
@@ -291,7 +373,8 @@ final class AppModel: ObservableObject {
             if couchMode { NSApplication.shared.activate(ignoringOtherApps: true) }
         }
     }
-    func installLauncher(_ bottle: Bottle) {
+    /// `next` is added to the status line, as Will It Run?'s Set Up does with what to do next.
+    func installLauncher(_ bottle: Bottle, next: String? = nil) {
         guard let launcher = bottle.launcher, !busy, !sessionActive(bottle) else { return }
         busy = true; progress = 0
         Task {
@@ -299,13 +382,46 @@ final class AppModel: ObservableObject {
                 _ = try await service.fetchInstaller(for: bottle) { [self] value in await update(value) }
                 busy = false
                 let status = launcher.installerArguments.contains("/S") ? "Installing \(launcher.title)…" : "Continue in the \(launcher.title) installer."
-                startSession(bottle, status) { [service] in try await service.launchInstaller(bottle) }
+                // After Set Up, the next step stays on screen once the installer has finished.
+                let ended = next.map { "\(launcher.title) is installed. Click Open \(launcher.title), then: \($0)" }
+                startSession(bottle, [status, next].compactMap { $0 }.joined(separator: " "), ended: ended) { [service] in try await service.launchInstaller(bottle) }
             } catch { self.error = error.localizedDescription; busy = false }
             refresh()
         }
     }
-    func openLauncher(_ bottle: Bottle) {
-        startSession(bottle, "Continue in the \(bottle.launcher?.title ?? "launcher") window.") { [service] in try await service.launchLauncher(bottle) }
+    func openLauncher(_ bottle: Bottle, next: String? = nil) {
+        startSession(bottle, ["Continue in the \(bottle.launcher?.title ?? "launcher") window.", next].compactMap { $0 }.joined(separator: " ")) { [service] in try await service.launchLauncher(bottle) }
+    }
+    /// Will It Run? › Set Up: the bottle for the store the game is from (made if there is none), with
+    /// the store's launcher installed or opened, so the game can be installed there as on a PC.
+    func setUp(_ game: CompatibilityReport, from launcher: Launcher) {
+        showingWillItRun = false
+        let next = "Sign in, install \(game.title) in \(launcher.title), and it appears in your library."
+        if let existing = library.bottles.first(where: { $0.launcher == launcher && ready($0) }) {
+            selectedBottleID = existing.id
+            page = .bottles
+            if sessionActive(existing) { message = "\(launcher.title) is open. Install \(game.title) there, and it appears in your library." }
+            else if installedLaunchers.contains(existing.id) { openLauncher(existing, next: "Install \(game.title) there, and it appears in your library.") }
+            else { installLauncher(existing, next: next) }
+            return
+        }
+        guard runtimeReady else { error = "Prepare Portnaut first: Library › Prepare Portnaut."; return }
+        guard !busy else { error = "Portnaut is busy. Try again when it has finished."; return }
+        busy = true; progress = 0; message = "Creating a bottle for \(launcher.title)…"
+        Task {
+            do {
+                let bottle = try await service.createBottle(name: launcher.title, launcher: launcher, renderer: launcher.recommendation.renderer, easyMode: true)
+                busy = false
+                refresh()
+                selectedBottleID = bottle.id
+                page = .bottles
+                installLauncher(bottle, next: next)
+            } catch {
+                self.error = error.localizedDescription
+                busy = false
+                message = "That needs attention. You can retry safely."
+            }
+        }
     }
     func play(_ entry: LibraryEntry) {
         // A best-setup round must start the session itself: Portnaut switches the renderer and records it.
@@ -510,11 +626,17 @@ final class AppModel: ObservableObject {
             let alongside = sessionActive(bottle)
             if !alongside { sessions.insert(bottle.id) }
             message = "Continue in the installer window. \(file.lastPathComponent)’s folder is drive H: until it finishes."
+            let started = Date()
+            // An installer that closes at once may refuse the bottle's Windows version.
+            let hint = { [bottle] in Diagnostics.installerEndedEarlyHint(seconds: Date().timeIntervalSince(started), windowsVersion: bottle.windowsVersion) }
             do {
                 let added = try await service.runInstaller(file, in: bottle, waitForSession: !alongside)
                 if !alongside { sessions.remove(bottle.id) }
                 refresh()
-                if added.isEmpty {
+                if added.isEmpty, let hint = hint() {
+                    message = hint
+                    if bottle.windowsVersion.isOld { self.error = hint }
+                } else if added.isEmpty {
                     message = "The installer finished without adding programs Portnaut can find. Use Add Game… to choose one."
                 } else {
                     message = "Installed. Choose what to add to your library."
@@ -522,7 +644,7 @@ final class AppModel: ObservableObject {
                 }
             } catch {
                 if !alongside { sessions.remove(bottle.id) }
-                self.error = error.localizedDescription
+                self.error = [error.localizedDescription, hint()].compactMap { $0 }.joined(separator: " ")
                 refresh()
             }
         }
@@ -604,7 +726,8 @@ final class AppModel: ObservableObject {
         let urls = [service.paths.setupLog, service.paths.sessionLog]
         logText = urls.compactMap { url -> String? in
             guard let content = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-            return "— \(url.lastPathComponent) —\n" + content.split(separator: "\n", omittingEmptySubsequences: false).suffix(150).joined(separator: "\n")
+            // MoltenVK's list of Vulkan extensions is left out: it would fill the 150 lines.
+            return "— \(url.lastPathComponent) —\n" + Diagnostics.tail(of: content)
         }.joined(separator: "\n\n")
         if logText.isEmpty { logText = runtimeReady ? "No activity yet." : "No activity yet. Prepare Portnaut to get started." }
     }
