@@ -36,5 +36,7 @@ struct SelfUpdateTests {
         #expect(info["SUAllowsAutomaticUpdates"] as? Bool == false)
         #expect(info["SUEnableSystemProfiling"] == nil)
         #expect(info["NSAppTransportSecurity"] == nil)
+        // Without it macOS hands Wine silence instead of asking for the microphone (voice chat in games).
+        #expect((info["NSMicrophoneUsageDescription"] as? String)?.isEmpty == false)
     }
 }

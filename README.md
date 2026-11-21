@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <img alt="Version 0.13.0" src="https://img.shields.io/badge/version-0.13.0-FF8A3D">
+  <img alt="Version 0.13.1" src="https://img.shields.io/badge/version-0.13.1-FF8A3D">
   <img alt="macOS 14.6 or later" src="https://img.shields.io/badge/macOS-14.6%2B-141B3A">
   <img alt="Apple silicon" src="https://img.shields.io/badge/Apple%20silicon-M1%20or%20later-141B3A">
   <img alt="Free, MIT licence" src="https://img.shields.io/badge/licence-MIT-141B3A">
 </p>
 
 <p align="center">
-  <a href="https://github.com/BuiltByArgo/Portnaut/releases/latest"><img alt="Download Portnaut 0.13.0" src="https://img.shields.io/badge/Download%20Portnaut-0.13.0-FF8A3D?style=for-the-badge"></a>
+  <a href="https://github.com/BuiltByArgo/Portnaut/releases/latest"><img alt="Download Portnaut 0.13.1" src="https://img.shields.io/badge/Download%20Portnaut-0.13.1-FF8A3D?style=for-the-badge"></a>
   <a href="https://ko-fi.com/A2H229BWWV"><img alt="Support Portnaut on Ko-fi" src="https://img.shields.io/badge/Support%20Portnaut-Ko--fi-72A4F2?style=for-the-badge&logo=kofi&logoColor=white"></a>
   <a href="https://portnaut.com"><img alt="Portnaut's website" src="https://img.shields.io/badge/Website-portnaut.com-141B3A?style=for-the-badge"></a>
 </p>
@@ -109,6 +109,7 @@ update from inside the app too, with a snapshot first and a way back.
 - **Performance records:** frame rate, lows and GPU time for every session, to compare renderers.
 - **Settings** (⌘,): the Windows version new bottles start with, performance recording for every bottle, and cover art.
 - **Cover art** for Steam games in the library and Couch Mode, from the copies Steam keeps on your Mac.
+- **Voice chat:** games can use your microphone once you allow Portnaut in macOS's question.
 - **Experimental:** MetalFX upscaling, and DLSS through MetalFX for games that offer DLSS.
 
 Tested most with Assassin's Creed III Remastered through Ubisoft Connect: missions play at about
