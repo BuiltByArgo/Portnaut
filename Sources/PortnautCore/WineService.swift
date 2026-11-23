@@ -384,7 +384,12 @@ public final class WineService: @unchecked Sendable {
     public func createBottle(name: String, launcher: Launcher?, renderer: Renderer, windowsVersion: WindowsVersion? = nil, easyMode: Bool = true) async throws -> Bottle {
         guard paths.runtimeReady else { throw PortnautError("Prepare Portnaut first.") }
         var library = try paths.loadLibrary()
-        var bottle = Bottle(id: library.newBottleID(for: name), name: name, launcher: launcher, renderer: renderer)
+        let fm = FileManager.default
+        try fm.createDirectory(at: paths.bottles, withIntermediateDirectories: true)
+        let id = library.newBottleID(for: name) { (try? fm.attributesOfItem(atPath: paths.bottles.appendingPathComponent($0).path)) != nil }
+        var bottle = Bottle(id: id, name: name, launcher: launcher, renderer: renderer)
+        // Reserves the folder: this fails if the entry already exists, before the cleanup below can run.
+        try fm.createDirectory(at: paths.bottle(bottle).prefix, withIntermediateDirectories: false)
         let settings = self.settings
         bottle.windowsVersion = windowsVersion ?? settings.newBottleWindowsVersion
         bottle.options.recordPerformance = settings.recordPerformanceInNewBottles
@@ -393,7 +398,7 @@ public final class WineService: @unchecked Sendable {
         bottle.createdAt = Date()
         do { try await prepareBottle(bottle) }
         catch {
-            try? FileManager.default.removeItem(at: paths.bottle(bottle).prefix)
+            try? fm.removeItem(at: paths.bottle(bottle).prefix)
             throw error
         }
         library.update(bottle)

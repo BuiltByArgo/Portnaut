@@ -452,11 +452,11 @@ public struct Library: Codable, Sendable {
         let name = kept.joined(separator: " ")
         return name.isEmpty ? "Programs" : String(name.prefix(40))
     }
-    /// Folder-safe, unique among existing bottles.
-    public func newBottleID(for name: String) -> String {
+    /// Folder-safe, unique among existing bottles and not `taken` (a folder left by a bottle no longer listed).
+    public func newBottleID(for name: String, taken: (String) -> Bool = { _ in false }) -> String {
         let stem = Self.slug(name, fallback: "bottle")
         var candidate = stem, suffix = 2
-        while bottles.contains(where: { $0.id == candidate }) { candidate = "\(stem)-\(suffix)"; suffix += 1 }
+        while bottles.contains(where: { $0.id == candidate }) || taken(candidate) { candidate = "\(stem)-\(suffix)"; suffix += 1 }
         return candidate
     }
 }
