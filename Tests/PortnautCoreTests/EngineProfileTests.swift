@@ -126,7 +126,7 @@ struct EngineProfileTests {
         #expect(final["atidxx64.dll"] == "/p/deps/Frameworks/renderer/d3dmetal/wine/x86_64-windows/atidxx64.dll")
     }
 
-    /// Every download is pinned by its SHA-256, and the engine comes from rofrol/Portnaut's releases.
+    /// Every download is pinned by its SHA-256, and the engine comes from Portnaut's own releases.
     @Test func downloadsArePinned() {
         for profile in EngineProfile.allCases {
             for download in profile.downloads {
@@ -134,7 +134,7 @@ struct EngineProfileTests {
                 #expect(!download.url.path.lowercased().hasPrefix("/tarikbc/"), "\(download.url)")
             }
         }
-        #expect(EngineProfile.gta5Enhanced.downloads.contains { $0.url.absoluteString.hasPrefix("https://github.com/rofrol/Portnaut/releases/download/") })
+        #expect(EngineProfile.gta5Enhanced.downloads.contains { $0.url.absoluteString.hasPrefix("https://github.com/BuiltByArgo/Portnaut/releases/download/") })
     }
 
     @Test func linksResolveInsideTheProfile() {

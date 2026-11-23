@@ -14,10 +14,11 @@ public struct ProfileDownload: Sendable, Equatable {
 /// against the hashes below.
 ///
 /// gta5Enhanced is the GTA V Enhanced environment of MacGames 0.1.6 (https://github.com/tarikbc/macgames) on
-/// WineHQ's Wine 11.13 with seven of MacGames' patches (the Rockstar Games Launcher's Direct3D feature level,
-/// Social Club's browser, the Mac driver's D3DMetal surface and others; not its GTA D3D12Core loading patch),
-/// built by the build-gta5-wine workflow on rofrol/Portnaut's gta5-wine-engine branch (engines/gta5-wine) and
-/// published there with its source and patches. The same release carries WineD3D builds of d3d11, dxgi and
+/// WineHQ's Wine 11.13 with six of MacGames' patches (the Rockstar Games Launcher's Direct3D feature level,
+/// Social Club's browser, the Mac driver's D3DMetal surface and others; not its GTA D3D12Core loading patch)
+/// and Portnaut's wine-native-copy,
+/// built by the build-gta5-wine workflow (engines/gta5-wine) and published in BuiltByArgo/Portnaut's releases
+/// with its source and patches. The same release carries WineD3D builds of d3d11, dxgi and
 /// d3d10core for the Rockstar Games Launcher and Social Club, which do not start on D3DMetal; the game runs on
 /// Apple's D3DMetal 4.0b3, from Sikarugir's template 1.0.27 (MacGames uses 4.0b2; 4.0b3 played in the same
 /// layout). The layout mirrors MacGames' GameEnvironment.gta5, PrefixSetup.graphicsCopies and
@@ -69,7 +70,7 @@ public enum EngineProfile: String, Codable, CaseIterable, Sendable, Identifiable
     /// Shown wherever the profile can be chosen: the parts' own licences apply.
     public var licenseNote: String {
         switch self {
-        case .gta5Enhanced: "Downloaded from rofrol/Portnaut’s releases on GitHub (Wine, LGPL, with its source and patches) and Sikarugir’s templates. D3DMetal is Apple’s, from the Game Porting Toolkit; its licence covers non-commercial use for developing, testing and evaluating games on Apple hardware."
+        case .gta5Enhanced: "Downloaded from Portnaut’s releases on GitHub (Wine, LGPL, with its source and patches) and Sikarugir’s templates. D3DMetal is Apple’s, from the Game Porting Toolkit; its licence covers non-commercial use for developing, testing and evaluating games on Apple hardware."
         }
     }
 
@@ -84,7 +85,7 @@ public enum EngineProfile: String, Codable, CaseIterable, Sendable, Identifiable
         switch self {
         case .gta5Enhanced:
             return [
-                ProfileDownload(url: URL(string: "https://github.com/rofrol/Portnaut/releases/download/\(Self.engineRelease)/\(Self.engineRelease).tar.xz")!,
+                ProfileDownload(url: URL(string: "https://github.com/BuiltByArgo/Portnaut/releases/download/\(Self.engineRelease)/\(Self.engineRelease).tar.xz")!,
                                 fileName: "\(Self.engineRelease).tar.xz", sha256: Self.engineSHA256),
                 ProfileDownload(url: URL(string: "https://github.com/Sikarugir-App/Wrapper/releases/download/v1.0/Template-1.0.15.tar.xz")!, fileName: "Template-1.0.15.tar.xz",
                                 sha256: "34273bcce885ce5a7fd6937af9ea344bb9961de7d55d6193f7413142e835c8c3"),
@@ -98,9 +99,13 @@ public enum EngineProfile: String, Codable, CaseIterable, Sendable, Identifiable
     var templateArchive: String { downloads[1].fileName }
     var d3dmetalArchive: String { downloads[2].fileName }
 
-    /// The engine release built by the build-gta5-wine workflow, and its archive's SHA-256.
-    static let engineRelease = "gta5-wine-11.13-8c2133a8baac-r3"
-    static let engineSHA256 = "da363c8f004cd21e9a635d0511274612a86207eccabf77837130f1d86da54619"
+    /// The engine release built by the build-gta5-wine workflow, and its archive's SHA-256 (from the release's
+    /// SHA256SUMS). Pending: the tag is the one the workflow's first run makes when commit 6076863bd8bb is
+    /// pushed as BuiltByArgo/Portnaut's gta5-wine-engine branch, and the hash is a placeholder that no archive
+    /// matches. Both are to be replaced by the tag and the archive's SHA-256 of the release that run actually
+    /// publishes, before this merges. Until then the engine's download fails.
+    static let engineRelease = "gta5-wine-11.13-6076863bd8bb-r1"
+    static let engineSHA256 = "0000000000000000000000000000000000000000000000000000000000000000"
 
     /// Links the engine gets to D3DMetal, relative to engine/, with their targets in the renderer layout
     /// linkTarget resolves, each replacing the engine's own file: D3DMetal's dxgi, d3d11 and d3d12 builtins
