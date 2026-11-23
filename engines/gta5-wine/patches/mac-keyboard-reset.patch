@@ -1,0 +1,22 @@
+--- a/dlls/winemac.drv/keyboard.c
++++ b/dlls/winemac.drv/keyboard.c
+@@ -1179,6 +1179,19 @@
+ 
+     TRACE("hkl %p flags %04x\n", hkl, flags);
+ 
++
++    /* GTA repeatedly resets its unchanged non-IME layout while pumping messages.
++     * Avoid generating another IME notification for that no-op in its private
++     * runtime. Preserve other executables, changed layouts and IME behavior. */
++    if (flags == KLF_RESET && hkl == thread_data->active_keyboard_layout && !is_ime_hkl(hkl))
++    {
++        const char *enabled = getenv("GTM_ROCKSTAR_SWIFTSHADER");
++        const WCHAR *name = RtlGetCurrentPeb()->ProcessParameters->ImagePathName.Buffer, *base;
++        if ((base = wcsrchr(name, '\\'))) name = base + 1;
++        if (enabled && !strcmp(enabled, "1") && !wcsicmp(name, u"GTA5_Enhanced.exe"))
++            return TRUE;
++    }
++
+     NtUserPostMessage( NULL, WM_WINE_IME_NOTIFY, IMN_WINE_SET_OPEN_STATUS, is_ime_hkl(hkl) );
+ 
+     if (hkl == thread_data->active_keyboard_layout)

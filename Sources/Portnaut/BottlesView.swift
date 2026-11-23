@@ -38,7 +38,7 @@ struct BottlesPage: View {
                 Image(systemName: bottle.launcher?.symbol ?? "shippingbox").frame(width: 18)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(bottle.name).font(.system(size: 13, weight: selected ? .semibold : .regular)).lineLimit(1)
-                    Text("\(bottle.renderer.title) · \(bottle.games.count) game\(bottle.games.count == 1 ? "" : "s")").font(.system(size: 10)).foregroundStyle(Palette.muted)
+                    Text("\(bottle.engineProfile?.shortTitle ?? bottle.renderer.title) · \(bottle.games.count) game\(bottle.games.count == 1 ? "" : "s")").font(.system(size: 10)).foregroundStyle(Palette.muted)
                 }
                 Spacer()
                 if model.sessionActive(bottle) { Circle().fill(Palette.accent).frame(width: 6, height: 6) }
@@ -85,9 +85,12 @@ struct BottleDetail: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 SectionTitle(title: "Easy mode", symbol: "wand.and.stars")
-                Toggle("Choose the renderer for each game", isOn: binding(\.easyMode, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
-                Text("When you press Play, Portnaut switches this bottle to the renderer the game was tested on, or else the one its files suggest\(bottle.launcher.map { ", always one \($0.title) starts on" } ?? ""). A game started in an open launcher keeps the launcher’s renderer.")
-                    .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                // A profile bottle's engine replaces the renderer, so there is none to choose.
+                if bottle.engineProfile == nil {
+                    Toggle("Choose the renderer for each game", isOn: binding(\.easyMode, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
+                    Text("When you press Play, Portnaut switches this bottle to the renderer the game was tested on, or else the one its files suggest\(bottle.launcher.map { ", always one \($0.title) starts on" } ?? ""). A game started in an open launcher keeps the launcher’s renderer.")
+                        .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                }
                 Toggle("Back up saves before each game", isOn: binding(\.autoBackupSaves, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
                 Text("Copies the bottle’s save folders to ~/Documents/Portnaut Backups before every game Portnaut starts. The ten newest automatic copies are kept; backups you make yourself are never removed.")
                     .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
@@ -95,43 +98,49 @@ struct BottleDetail: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 SectionTitle(title: "Graphics", symbol: "cpu")
-                Picker("Renderer", selection: binding(\.renderer, fallback: bottle)) {
-                    ForEach(Renderer.allCases) { Text($0.title).tag($0) }
-                }.pickerStyle(.segmented).labelsHidden().disabled(running || model.busy)
-                Text(bottle.renderer.detail).font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
-                if let recommendation {
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: recommendation.renderer == bottle.renderer ? "checkmark.seal" : "lightbulb")
-                            .foregroundStyle(recommendation.renderer == bottle.renderer ? Palette.cyan : Palette.accent)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Recommended: \(recommendation.renderer.title)").font(.system(size: 12, weight: .semibold))
-                            Text(recommendation.reason).font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
-                        }
-                        Spacer()
-                        if recommendation.renderer != bottle.renderer {
-                            Button("Use \(recommendation.renderer.title)") { binding(\.renderer, fallback: bottle).wrappedValue = recommendation.renderer }
-                                .buttonStyle(PortnautButtonStyle(primary: true)).frame(height: 28).disabled(running || model.busy)
-                        }
-                    }.padding(12).background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 9))
-                }
-                if let note = [bottle.renderer, recommendation?.renderer].compactMap({ $0?.licenseNote }).first {
-                    Label(note, systemImage: "doc.text").font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
-                }
-                if running { Text("Stop the session to switch renderer.").font(.system(size: 11)).foregroundStyle(Palette.accent) }
-                if let launcher = bottle.launcher, launcher.unsupportedRenderers.contains(bottle.renderer) {
-                    Label("\(launcher.title) does not start properly on \(bottle.renderer.title) (tested). Use \(launcher.recommendation.renderer.title).", systemImage: "exclamationmark.triangle")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true)
-                }
-                if bottle.renderer == .dxmt {
-                    let display = MainDisplay.description
-                    Toggle("MetalFX upscaling", isOn: binding(\.options.metalFXUpscaling, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
-                    Text("Games render at \(display.points), the Mac’s point resolution with a quarter of the pixels, and MetalFX upscales the picture to \(display.pixels). Leave the game’s resolution at the highest it offers. Its HUD is upscaled too; for a sharper HUD, lower the game’s own resolution scale instead. Applies to every program in the bottle from its next session.")
-                        .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
-                }
-                if bottle.renderer == .dxmt || bottle.renderer == .d3dmetal {
-                    Toggle("DLSS through MetalFX", isOn: binding(\.options.dlss, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
-                    Text("For games that offer DLSS: turn DLSS on in the game and MetalFX does the upscaling\(bottle.renderer == .d3dmetal ? " (Apple’s D3DMetal)" : " (DXMT’s bridge)"). Games then see an NVIDIA graphics card, so turn this off if one misbehaves.")
-                        .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                if let profile = bottle.engineProfile {
+                    Text(profile.title).font(.system(size: 12, weight: .semibold))
+                    Text(profile.detail).font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    Label(profile.licenseNote, systemImage: "doc.text").font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Picker("Renderer", selection: binding(\.renderer, fallback: bottle)) {
+                        ForEach(Renderer.allCases) { Text($0.title).tag($0) }
+                    }.pickerStyle(.segmented).labelsHidden().disabled(running || model.busy)
+                    Text(bottle.renderer.detail).font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    if let recommendation {
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: recommendation.renderer == bottle.renderer ? "checkmark.seal" : "lightbulb")
+                                .foregroundStyle(recommendation.renderer == bottle.renderer ? Palette.cyan : Palette.accent)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Recommended: \(recommendation.renderer.title)").font(.system(size: 12, weight: .semibold))
+                                Text(recommendation.reason).font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                            if recommendation.renderer != bottle.renderer {
+                                Button("Use \(recommendation.renderer.title)") { binding(\.renderer, fallback: bottle).wrappedValue = recommendation.renderer }
+                                    .buttonStyle(PortnautButtonStyle(primary: true)).frame(height: 28).disabled(running || model.busy)
+                            }
+                        }.padding(12).background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 9))
+                    }
+                    if let note = [bottle.renderer, recommendation?.renderer].compactMap({ $0?.licenseNote }).first {
+                        Label(note, systemImage: "doc.text").font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    }
+                    if let launcher = bottle.launcher, launcher.unsupportedRenderers.contains(bottle.renderer) {
+                        Label("\(launcher.title) does not start properly on \(bottle.renderer.title) (tested). Use \(launcher.recommendation.renderer.title).", systemImage: "exclamationmark.triangle")
+                            .font(.system(size: 12, weight: .medium)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true)
+                    }
+                    if bottle.renderer == .dxmt {
+                        let display = MainDisplay.description
+                        Toggle("MetalFX upscaling", isOn: binding(\.options.metalFXUpscaling, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
+                        Text("Games render at \(display.points), the Mac’s point resolution with a quarter of the pixels, and MetalFX upscales the picture to \(display.pixels). Leave the game’s resolution at the highest it offers. Its HUD is upscaled too; for a sharper HUD, lower the game’s own resolution scale instead. Applies to every program in the bottle from its next session.")
+                            .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    }
+                    if bottle.renderer == .dxmt || bottle.renderer == .d3dmetal {
+                        Toggle("DLSS through MetalFX", isOn: binding(\.options.dlss, fallback: bottle)).toggleStyle(.switch).disabled(model.busy)
+                        Text("For games that offer DLSS: turn DLSS on in the game and MetalFX does the upscaling\(bottle.renderer == .d3dmetal ? " (Apple’s D3DMetal)" : " (DXMT’s bridge)"). Games then see an NVIDIA graphics card, so turn this off if one misbehaves.")
+                            .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    }
+                    if running { Text("Stop the session to switch renderer.").font(.system(size: 11)).foregroundStyle(Palette.accent) }
                 }
                 ForEach(bottle.games) { game in
                     if let analysis = model.analyses["\(bottle.id)/\(game.id)"] {
@@ -140,7 +149,7 @@ struct BottleDetail: View {
                             Text("\(analysis.is64Bit ? "64-bit" : "32-bit") · \((analysis.imported.isEmpty ? analysis.mentioned : analysis.imported).map(\.title).joined(separator: ", ").isEmpty ? "no graphics API found" : (analysis.imported.isEmpty ? analysis.mentioned : analysis.imported).map(\.title).joined(separator: ", "))")
                                 .font(.system(size: 11)).foregroundStyle(Palette.muted)
                             Spacer()
-                            RendererBadge(current: bottle.renderer, recommended: analysis.recommendation)
+                            if bottle.engineProfile == nil { RendererBadge(current: bottle.renderer, recommended: analysis.recommendation) }
                         }
                     }
                 }
@@ -167,10 +176,11 @@ struct BottleDetail: View {
                                                               set: { binding(\.options.frameRateLimit, fallback: bottle).wrappedValue = $0 == 0 ? nil : $0 })) {
                     Text("Off").tag(0)
                     ForEach(GraphicsProfile.frameRateLimits, id: \.self) { Text("\($0) fps").tag($0) }
-                }.frame(maxWidth: 280).disabled(bottle.renderer != .dxmt)
+                }.frame(maxWidth: 280).disabled(bottle.renderer != .dxmt || bottle.engineProfile != nil)
                 Toggle("Show Metal performance HUD", isOn: binding(\.options.performanceHUD, fallback: bottle)).toggleStyle(.switch)
-                Toggle("Record performance", isOn: binding(\.options.recordPerformance, fallback: bottle)).toggleStyle(.switch)
-                Toggle("Reduce frame queue", isOn: binding(\.options.reduceFrameQueue, fallback: bottle)).toggleStyle(.switch)
+                // Both are read by Portnaut's Metal shim, which an engine profile's programs do not load.
+                Toggle("Record performance", isOn: binding(\.options.recordPerformance, fallback: bottle)).toggleStyle(.switch).disabled(bottle.engineProfile != nil)
+                Toggle("Reduce frame queue", isOn: binding(\.options.reduceFrameQueue, fallback: bottle)).toggleStyle(.switch).disabled(bottle.engineProfile != nil)
                 Toggle("Advertise AVX instructions", isOn: binding(\.options.advertiseAVX, fallback: bottle)).toggleStyle(.switch)
                 Text("The frame limit is DXMT’s and, like the game’s VSync, holds each frame until its slot, about one frame of extra delay. For the least delay: VSync off in the game, no limit, Reduce frame queue on. The HUD is Apple’s Metal overlay. Record performance writes a PortnautLatency summary to the session log every 5 seconds and keeps a record of each game session, for comparing renderers on the game’s page. Advertise AVX lets games that require AVX or AVX2 start: Rosetta translates those instructions but reports them only when asked. All apply when the bottle’s next session starts.")
                     .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
@@ -186,7 +196,7 @@ struct BottleDetail: View {
                 Button("Edit Variables…") { model.editingEnvironment = bottle }.buttonStyle(PortnautButtonStyle(primary: false)).frame(height: 28).disabled(model.busy)
             }.card().id("environment")
 
-            if let note = launcherNote(bottle.launcher) {
+            if let note = launcherNote(bottle) {
                 Label(note, systemImage: bottle.launcher?.symbol ?? "info.circle").font(.system(size: 12)).foregroundStyle(Palette.muted)
                     .fixedSize(horizontal: false, vertical: true).card(padding: 16)
             }
@@ -283,13 +293,13 @@ struct BottleDetail: View {
         }.card().id("components")
     }
 
-    private func launcherNote(_ launcher: Launcher?) -> String? {
-        switch launcher {
+    private func launcherNote(_ bottle: Bottle) -> String? {
+        switch bottle.launcher {
         case .steam: "Games Steam installs join your library as soon as they finish downloading and start through Steam, also while Steam is open. Steam’s window is drawn in software: on Wine’s Mac driver its browser cannot draw from a separate GPU process."
         case .ea: "Games the EA app installs join your library once their install record is written; Find Programs lists any others. Games with EA’s kernel anti-cheat do not run under Wine."
         case .epic: "Games the Epic Games Launcher installs join your library once it records them, and start through the launcher, which signs them in to Epic’s online services. Fortnite does not run under Wine."
         case .battlenet: "Battle.net gives each game a folder of its own: Find Programs lists the ones with a shortcut, and Add Game… adds any other. World of Warcraft, Hearthstone and StarCraft II have Mac versions of their own. Call of Duty’s anti-cheat does not run under Wine."
-        case .rockstar: "Keep this bottle on DXMT or DXVK: on D3DMetal the Rockstar Games Launcher fails to initialize. Find Programs lists the games in Rockstar’s games folder; they open the launcher themselves when they need it. GTA Online does not run under Wine: its anti-cheat blocks it. Story modes are not affected."
+        case .rockstar: (bottle.engineProfile == nil ? "Keep this bottle on DXMT or DXVK: on D3DMetal the Rockstar Games Launcher fails to initialize. " : "") + "Find Programs lists the games in Rockstar’s games folder; they open the launcher themselves when they need it. GTA Online does not run under Wine: its anti-cheat blocks it. Story modes are not affected."
         case .gog: "GOG games are DRM-free: they join your library once installed and start without Galaxy. GOG’s offline installers work through Install from File too. Galaxy draws its window in software, which Portnaut sets before it starts."
         case .amazon: "Games the Amazon Games app installs join your library once their install record is written."
         case .ubisoft, nil: nil
@@ -337,25 +347,43 @@ struct BottleDetail: View {
 
 final class NewBottleDraft: ObservableObject {
     enum Kind: Hashable, Identifiable {
-        case launcher(Launcher), general
-        static let all = Launcher.allCases.map(Kind.launcher) + [.general]
-        var id: String { launcher?.rawValue ?? "general" }
+        /// `engine` is a launcher's bottle on an engine profile, which it keeps.
+        case launcher(Launcher), engine(EngineProfile), general
+        /// Each engine profile's kind follows its launcher's.
+        static let all = Launcher.allCases.flatMap { launcher in
+            [Kind.launcher(launcher)] + EngineProfile.allCases.filter { $0.launcher == launcher }.map(Kind.engine)
+        } + [.general]
+        var id: String {
+            switch self {
+            case .launcher(let launcher): launcher.rawValue
+            case .engine(let profile): "engine-" + profile.rawValue
+            case .general: "general"
+            }
+        }
         var launcher: Launcher? {
-            if case .launcher(let launcher) = self { return launcher }
+            switch self {
+            case .launcher(let launcher): launcher
+            case .engine(let profile): profile.launcher
+            case .general: nil
+            }
+        }
+        var engineProfile: EngineProfile? {
+            if case .engine(let profile) = self { return profile }
             return nil
         }
-        var title: String { launcher?.title ?? "Empty bottle" }
+        var title: String { engineProfile?.bottleKind ?? launcher?.title ?? "Empty bottle" }
         /// Short enough for the type grid.
         var tileTitle: String {
+            if engineProfile != nil { return title }
             switch launcher {
-            case .epic: "Epic Games"
-            case .rockstar: "Rockstar Games"
-            default: title
+            case .epic: return "Epic Games"
+            case .rockstar: return "Rockstar Games"
+            default: return title
             }
         }
         var symbol: String { launcher?.symbol ?? "shippingbox" }
         var recommendation: Recommendation { launcher?.recommendation ?? GraphicsAdvisor.recommendation(for: Bottle(id: "", name: "", renderer: .dxmt), analyses: []) }
-        var defaultName: String { launcher?.title ?? "Games" }
+        var defaultName: String { engineProfile?.bottleKind ?? launcher?.title ?? "Games" }
     }
     /// Choosing a type resets the name and renderer to that type's defaults.
     @Published var kind = Kind.launcher(.ubisoft) { didSet { name = kind.defaultName; renderer = kind.recommendation.renderer } }
@@ -392,21 +420,30 @@ struct NewBottleSheet: View {
             }
             TextField("Name", text: $draft.name).textFieldStyle(.roundedBorder)
             VStack(alignment: .leading, spacing: 8) {
-                Picker("Renderer", selection: $draft.renderer) { ForEach(Renderer.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
-                Text("Recommended: \(draft.kind.recommendation.renderer.title). \(draft.kind.recommendation.reason)").font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
-                if let note = draft.renderer.licenseNote { Text(note).font(.system(size: 11)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true) }
+                if let profile = draft.kind.engineProfile {
+                    Text("\(profile.detail) \(profile.recommendationReason) It is downloaded while the bottle is created.").font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    Text(profile.licenseNote).font(.system(size: 11)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Picker("Renderer", selection: $draft.renderer) { ForEach(Renderer.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
+                    Text("Recommended: \(draft.kind.recommendation.renderer.title). \(draft.kind.recommendation.reason)").font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+                    if let note = draft.renderer.licenseNote { Text(note).font(.system(size: 11)).foregroundStyle(Palette.accent).fixedSize(horizontal: false, vertical: true) }
+                }
             }
             Picker("Windows version", selection: $draft.windows) { ForEach(WindowsVersion.allCases) { Text($0.title).tag($0) } }.frame(maxWidth: 300)
             OldWindowsNote(version: draft.windows)
-            Toggle("Easy mode: choose the renderer for each game, and back up saves before each game", isOn: $draft.easyMode).toggleStyle(.switch)
+            // A profile bottle has no renderer to choose, so easy mode only backs up saves there.
+            Toggle(draft.kind.engineProfile == nil ? "Easy mode: choose the renderer for each game, and back up saves before each game" : "Easy mode: back up saves before each game",
+                   isOn: $draft.easyMode).toggleStyle(.switch)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("The renderer, Windows version and other settings can be changed later in the bottle’s settings.").font(.system(size: 11)).foregroundStyle(Palette.muted)
+            Text(draft.kind.engineProfile == nil ? "The renderer, Windows version and other settings can be changed later in the bottle’s settings."
+                 : "The Windows version and other settings can be changed later in the bottle’s settings; the engine stays.").font(.system(size: 11)).foregroundStyle(Palette.muted)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Create") {
-                    model.createBottle(name: name, launcher: draft.kind.launcher, renderer: draft.renderer, windowsVersion: draft.windows, easyMode: draft.easyMode)
+                    model.createBottle(name: name, launcher: draft.kind.launcher, renderer: draft.renderer, engineProfile: draft.kind.engineProfile,
+                                      windowsVersion: draft.windows, easyMode: draft.easyMode)
                     dismiss()
                 }.keyboardShortcut(.defaultAction).disabled(name.isEmpty || model.busy)
             }

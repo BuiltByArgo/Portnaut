@@ -359,10 +359,14 @@ public struct Bottle: Codable, Equatable, Sendable, Identifiable {
     /// Copies the bottle's saves to Portnaut Backups before every game Portnaut starts; the ten
     /// newest of these copies are kept.
     public var autoBackupSaves = false
+    /// A whole engine replacing Portnaut's runtime and the renderer, set when the bottle is created and never
+    /// changed; nil for Portnaut's own.
+    public var engineProfile: EngineProfile?
     /// Wine's Retina mode: High Resolution Mode, except while MetalFX upscales to Retina instead.
     public var retinaMode: Bool { highResolution && !metalFXActive }
-    public var metalFXActive: Bool { renderer == .dxmt && options.metalFXUpscaling }
-    public var dlssActive: Bool { (renderer == .dxmt || renderer == .d3dmetal) && options.dlss }
+    /// Both belong to Portnaut's renderers; an engine profile has neither.
+    public var metalFXActive: Bool { engineProfile == nil && renderer == .dxmt && options.metalFXUpscaling }
+    public var dlssActive: Bool { engineProfile == nil && (renderer == .dxmt || renderer == .d3dmetal) && options.dlss }
     /// How a performance record names this bottle's graphics configuration.
     public var performanceLabel: String {
         [renderer.title, metalFXActive ? "MetalFX 2×" : nil, dlssActive ? "DLSS" : nil, !metalFXActive && !highResolution ? "High Resolution off" : nil,
@@ -379,7 +383,7 @@ public struct Bottle: Codable, Equatable, Sendable, Identifiable {
     // Files from before 0.7.0 may hold connectGPUOverride, a removed Ubisoft Connect setting; it is ignored.
     enum CodingKeys: String, CodingKey {
         case id, name, launcher, renderer, windowsVersion, highResolution, msync, options, environment, controllers, components, games, createdAt
-        case easyMode, autoBackupSaves
+        case easyMode, autoBackupSaves, engineProfile
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -399,6 +403,7 @@ public struct Bottle: Codable, Equatable, Sendable, Identifiable {
         // Bottles from before 0.10.0 keep working as they did until the owner turns these on.
         easyMode = try c.value(.easyMode, default: false)
         autoBackupSaves = try c.value(.autoBackupSaves, default: false)
+        engineProfile = try c.decodeIfPresent(EngineProfile.self, forKey: .engineProfile)
     }
 }
 

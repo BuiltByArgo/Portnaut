@@ -56,7 +56,7 @@ struct InstallSheet: View {
                 Picker("Windows version", selection: $draft.windows) { ForEach(WindowsVersion.allCases) { Text($0.title).tag($0) } }.frame(maxWidth: 300)
                 OldWindowsNote(version: draft.windows)
             } else if let chosen {
-                Text("\(chosen.name) uses \(chosen.renderer.title)\(model.sessionActive(chosen) ? " and is running; the installer runs alongside its programs" : "").")
+                Text("\(chosen.name) uses \(chosen.engineProfile?.shortTitle ?? chosen.renderer.title)\(model.sessionActive(chosen) ? " and is running; the installer runs alongside its programs" : "").")
                     .font(.system(size: 11)).foregroundStyle(Palette.muted)
             }
             Text("While the installer runs, its folder appears to Windows as drive H:, so installers with extra files beside them work. Portnaut then lists the programs it installed.")
@@ -111,7 +111,7 @@ struct ProgramPicker: View {
                     ForEach(choice.programs) { program in row(program, bottle: bottle) }
                 }
             }.frame(maxHeight: 320)
-            if !picked.isEmpty, suggestion.renderer != bottle.renderer {
+            if bottle.engineProfile == nil, !picked.isEmpty, suggestion.renderer != bottle.renderer {
                 VStack(alignment: .leading, spacing: 6) {
                     Toggle("Switch \(bottle.name) to \(suggestion.renderer.title)", isOn: $selection.switchRenderer).toggleStyle(.switch).disabled(running)
                     Text(running ? "Stop \(bottle.name)’s session first to switch its renderer." : suggestion.reason)
@@ -123,7 +123,7 @@ struct ProgramPicker: View {
                 Spacer()
                 Button("Not Now") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Add \(picked.count) to Library") {
-                    model.addPrograms(picked, to: bottle, renderer: selection.switchRenderer && !running && suggestion.renderer != bottle.renderer ? suggestion.renderer : nil)
+                    model.addPrograms(picked, to: bottle, renderer: selection.switchRenderer && !running && bottle.engineProfile == nil && suggestion.renderer != bottle.renderer ? suggestion.renderer : nil)
                     dismiss()
                 }.keyboardShortcut(.defaultAction).disabled(picked.isEmpty)
             }
@@ -145,7 +145,7 @@ struct ProgramPicker: View {
                         .font(.system(size: 10)).foregroundStyle(Palette.muted)
                 }
                 Spacer()
-                RendererBadge(current: bottle.renderer, recommended: analysis?.recommendation)
+                if bottle.engineProfile == nil { RendererBadge(current: bottle.renderer, recommended: analysis?.recommendation) }
             }
         }.toggleStyle(.checkbox).padding(.vertical, 8).padding(.horizontal, 10).background(Palette.card, in: RoundedRectangle(cornerRadius: 8))
     }

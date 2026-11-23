@@ -1,0 +1,154 @@
+--- a/tools/makedep.c
++++ b/tools/makedep.c
+@@ -220,6 +220,7 @@
+     bool            external;
+     bool            is_win16;
+     bool            is_exe;
++    bool            native_copy;
+     bool            disabled[MAX_ARCHS];
+ 
+     /* values generated at output time */
+@@ -3920,6 +3921,51 @@
+ 
+ 
+ /*******************************************************************
++ *         output_module_link
++ *
++ * The link rule of a module; native_copy links a PE module without Wine's builtin mark
++ * and without separate debug files.
++ */
++static void output_module_link( struct makefile *make, unsigned int arch, unsigned int link_arch,
++                                const char *module_name, const char *spec_file,
++                                struct strarray dep_libs, struct strarray all_libs, bool native_copy )
++{
++    const char *p;
++
++    strarray_add( &make->all_targets[link_arch], module_name );
++    output( "%s:", obj_dir_path( make, module_name ));
++    if (spec_file) output_filename( spec_file );
++    output_filenames_obj_dir( make, make->object_files[arch] );
++    if (link_arch != arch) output_filenames_obj_dir( make, make->object_files[link_arch] );
++    output_filenames_obj_dir( make, make->res_files[arch] );
++    output_filenames( dep_libs );
++    output_filename( winebuild );
++    output_filename( winegcc );
++    output( "\n" );
++    output_winegcc_command( make, link_arch );
++    if (arch && !native_copy) output_filename( "-Wl,--wine-builtin" );
++    if (!make->is_exe) output_filename( "-shared" );
++    if (spec_file)
++    {
++        output_filename( spec_file );
++        if (strendswith( make->module, ".dll" ) &&
++            (p = strchr( make->module, '.' )) &&
++            (p < make->module + strlen(make->module) - strlen(".dll")))
++            output_filename( strmake( "-Wb,-F,%s", make->module ));
++    }
++    output_filenames( make->extradllflags );
++    if (link_arch) output_filenames( get_expanded_arch_var_array( make, "EXTRADLLFLAGS", link_arch ));
++    output_filenames_obj_dir( make, make->object_files[arch] );
++    if (link_arch != arch) output_filenames_obj_dir( make, make->object_files[link_arch] );
++    output_filenames_obj_dir( make, make->res_files[arch] );
++    if (!native_copy) output_debug_files( make, module_name, link_arch );
++    output_filenames( all_libs );
++    output_filename( arch_make_variable( "LDFLAGS", link_arch ));
++    output( "\n" );
++}
++
++
++/*******************************************************************
+  *         output_module
+  */
+ static void output_module( struct makefile *make, unsigned int arch )
+@@ -3928,7 +3974,7 @@
+     struct strarray all_libs = empty_strarray;
+     struct strarray dep_libs = empty_strarray;
+     struct strarray imports = make->imports;
+-    const char *p, *module_name;
++    const char *module_name;
+     char *spec_file = NULL;
+     unsigned int link_arch;
+ 
+@@ -3979,36 +4025,14 @@
+                            strmake( "$(libdir)/wine/%s", arch_pe_dirs[arch] ), NULL );
+     }
+ 
+-    strarray_add( &make->all_targets[link_arch], module_name );
+-    output( "%s:", obj_dir_path( make, module_name ));
+-    if (spec_file) output_filename( spec_file );
+-    output_filenames_obj_dir( make, make->object_files[arch] );
+-    if (link_arch != arch) output_filenames_obj_dir( make, make->object_files[link_arch] );
+-    output_filenames_obj_dir( make, make->res_files[arch] );
+-    output_filenames( dep_libs );
+-    output_filename( winebuild );
+-    output_filename( winegcc );
+-    output( "\n" );
+-    output_winegcc_command( make, link_arch );
+-    if (arch) output_filename( "-Wl,--wine-builtin" );
+-    if (!make->is_exe) output_filename( "-shared" );
+-    if (spec_file)
+-    {
+-        output_filename( spec_file );
+-        if (strendswith( make->module, ".dll" ) &&
+-            (p = strchr( make->module, '.' )) &&
+-            (p < make->module + strlen(make->module) - strlen(".dll")))
+-            output_filename( strmake( "-Wb,-F,%s", make->module ));
+-    }
+-    output_filenames( make->extradllflags );
+-    if (link_arch) output_filenames( get_expanded_arch_var_array( make, "EXTRADLLFLAGS", link_arch ));
+-    output_filenames_obj_dir( make, make->object_files[arch] );
+-    if (link_arch != arch) output_filenames_obj_dir( make, make->object_files[link_arch] );
+-    output_filenames_obj_dir( make, make->res_files[arch] );
+-    output_debug_files( make, module_name, link_arch );
+-    output_filenames( all_libs );
+-    output_filename( arch_make_variable( "LDFLAGS", link_arch ));
+-    output( "\n" );
++    output_module_link( make, arch, link_arch, module_name, spec_file, dep_libs, all_libs, false );
++
++    /* NATIVECOPY: the PE module linked once more without the builtin mark, as <module>-native.dll
++     * beside it, for prefixes that need the module as a native file in system32 (the loader replaces
++     * a marked file with the builtin found first in WINEDLLPATH). Built with the module, not installed. */
++    if (make->native_copy && arch && !make->data_only && strendswith( module_name, ".dll" ))
++        output_module_link( make, arch, link_arch, replace_extension( module_name, ".dll", "-native.dll" ),
++                            spec_file, dep_libs, all_libs, true );
+ 
+     if (!make->data_only && !arch && unix_lib_supported) output_fake_module( make, spec_file );
+ }
+@@ -4911,6 +4935,7 @@
+     make->imports       = get_expanded_make_var_array( make, "IMPORTS" );
+     make->delayimports  = get_expanded_make_var_array( make, "DELAYIMPORTS" );
+     make->extradllflags = get_expanded_make_var_array( make, "EXTRADLLFLAGS" );
++    make->native_copy   = get_expanded_make_variable( make, "NATIVECOPY" ) != NULL;
+     make->extra_targets = get_expanded_make_var_array( make, "EXTRA_TARGETS" );
+     for (i = 0; i < NB_INSTALL_RULES; i++)
+         make->install[i] = get_expanded_make_var_array( make, install_variables[i] );
+--- a/dlls/d3d10core/Makefile.in
++++ b/dlls/d3d10core/Makefile.in
+@@ -1,6 +1,7 @@
+ MODULE    = d3d10core.dll
+ IMPORTLIB = d3d10core
+ IMPORTS   = d3d11 dxgi
++NATIVECOPY = 1
+ 
+ VER_FILEDESCRIPTION_STR = "Wine D3D10 Core"
+ VER_PRODUCTVERSION      = 6,0,6000,16386
+--- a/dlls/d3d11/Makefile.in
++++ b/dlls/d3d11/Makefile.in
+@@ -1,6 +1,7 @@
+ MODULE    = d3d11.dll
+ IMPORTLIB = d3d11
+ IMPORTS   = dxguid uuid dxgi wined3d
++NATIVECOPY = 1
+ EXTRAINCL = $(VKD3D_PE_CFLAGS)
+ 
+ VER_FILEDESCRIPTION_STR = "Wine Direct3D"
+--- a/dlls/dxgi/Makefile.in
++++ b/dlls/dxgi/Makefile.in
+@@ -1,6 +1,7 @@
+ MODULE    = dxgi.dll
+ IMPORTLIB = dxgi
+ IMPORTS   = gdi32 dxguid uuid wined3d user32 win32u
++NATIVECOPY = 1
+ EXTRAINCL = $(VKD3D_PE_CFLAGS)
+ 
+ VER_PRODUCTVERSION = 6,0,6000,16386

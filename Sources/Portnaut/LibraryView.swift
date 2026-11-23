@@ -100,7 +100,7 @@ struct FeaturedGame: View {
                         Tag(text: entry.bottle.name)
                         if entry.game.launcherArguments != nil, let launcher = entry.bottle.launcher { Tag(text: launcher.title) }
                         if let analysis, let api = analysis.imported.first ?? analysis.mentioned.first { Tag(text: api.title) }
-                        RendererBadge(current: entry.bottle.renderer, recommended: analysis?.recommendation)
+                        if entry.bottle.engineProfile == nil { RendererBadge(current: entry.bottle.renderer, recommended: analysis?.recommendation) }
                     }.padding(.top, 22)
                 }.padding(30)
             }.frame(height: 270).clipShape(RoundedRectangle(cornerRadius: 14)).overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.line))
@@ -127,16 +127,18 @@ struct FeaturedGame: View {
             if let report = model.reports[entry.id] {
                 CompatibilityRow(report: report).card(padding: 14)
             }
-            if let trial = entry.game.setupTrial { BestSetupCard(entry: entry, trial: trial) }
+            if let trial = entry.game.setupTrial, entry.bottle.engineProfile == nil { BestSetupCard(entry: entry, trial: trial) }
             PerformanceCard(entry: entry)
-            if entry.bottle.easyMode, let analysis, analysis.recommendation.renderer != entry.bottle.renderer {
+            // A profile bottle's engine replaces the renderer, so neither banner applies.
+            let rendererBottle = entry.bottle.engineProfile == nil
+            if rendererBottle, entry.bottle.easyMode, let analysis, analysis.recommendation.renderer != entry.bottle.renderer {
                 HStack(spacing: 10) {
                     Image(systemName: "wand.and.stars").foregroundStyle(Palette.cyan)
                     Text("Easy mode switches \(entry.bottle.name) to the renderer that suits \(entry.game.name) when you press Play.")
                         .font(.system(size: 12)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
                     Spacer()
                 }.card(padding: 14)
-            } else if let analysis, analysis.recommendation.renderer != entry.bottle.renderer {
+            } else if rendererBottle, let analysis, analysis.recommendation.renderer != entry.bottle.renderer {
                 HStack(spacing: 10) {
                     Image(systemName: "lightbulb").foregroundStyle(Palette.accent)
                     Text("\(entry.game.name) recommends \(analysis.recommendation.renderer.title); \(entry.bottle.name) uses \(entry.bottle.renderer.title). Change it in the bottle’s settings, or give the game its own bottle.")
@@ -169,7 +171,7 @@ struct GameCard: View {
                         else if report.status == .problems { Tag(text: "Problems reported", tint: Palette.accent) }
                         else if !report.antiCheat.isEmpty { Tag(text: "Anti-cheat", tint: Palette.accent) }
                     }
-                    RendererBadge(current: entry.bottle.renderer, recommended: analysis?.recommendation)
+                    if entry.bottle.engineProfile == nil { RendererBadge(current: entry.bottle.renderer, recommended: analysis?.recommendation) }
                 }
             }.padding(10).background(model.selectedEntry?.id == entry.id ? Color.white.opacity(0.08) : Palette.card, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(model.selectedEntry?.id == entry.id ? Palette.accent.opacity(0.6) : .clear))

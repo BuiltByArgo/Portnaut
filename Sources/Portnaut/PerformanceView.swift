@@ -14,10 +14,12 @@ struct PerformanceCard: View {
         // Renderers the bottle's launcher does not start on are left out (DXVK for Ubisoft Connect).
         let untried = model.analyses[entry.id].map(GraphicsAdvisor.candidates)?.filter { !tried.contains($0) && bottle.launcher?.unsupportedRenderers.contains($0) != true } ?? []
         let best = rows.first?.configuration
-        let candidates = model.analyses[entry.id].map { SetupTrial.candidates(for: $0, launcher: bottle.launcher) } ?? []
+        // A profile bottle's engine replaces the renderer: there are no renderers to compare or switch to.
+        let profile = bottle.engineProfile
+        let candidates = profile != nil ? [] : model.analyses[entry.id].map { SetupTrial.candidates(for: $0, launcher: bottle.launcher) } ?? []
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(title: "Performance", symbol: "chart.bar.xaxis")
-            if let best = entry.game.bestSetup {
+            if let best = entry.game.bestSetup, profile == nil {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "gauge.with.dots.needle.67percent").foregroundStyle(Palette.cyan)
                     VStack(alignment: .leading, spacing: 3) {
@@ -69,7 +71,10 @@ struct PerformanceCard: View {
                     .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
             }
             // Find My Best Setup covers trying the others when there are two or more.
-            if !untried.isEmpty, candidates.count < 2 {
+            if let profile {
+                Text("\(profile.title)’s engine replaces the renderer, so Portnaut has no renderers to compare for \(entry.game.name).")
+                    .font(.system(size: 11)).foregroundStyle(Palette.muted).fixedSize(horizontal: false, vertical: true)
+            } else if !untried.isEmpty, candidates.count < 2 {
                 HStack(spacing: 8) {
                     Text("Not tried yet:").font(.system(size: 12)).foregroundStyle(Palette.muted)
                     ForEach(untried) { renderer in

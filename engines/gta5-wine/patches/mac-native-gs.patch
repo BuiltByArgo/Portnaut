@@ -1,0 +1,192 @@
+--- a/dlls/ntdll/unix/signal_x86_64.c
++++ b/dlls/ntdll/unix/signal_x86_64.c
+@@ -824,7 +824,7 @@
+ #elif defined __APPLE__
+     if (!is_inside_signal_stack( data, (void *)RSP_sig(sigcontext )) &&
+         !is_inside_syscall( data, RSP_sig(sigcontext )))
+-        _thread_set_tsd_base( (uint64_t)data->teb );
++        _thread_set_tsd_base( (uint64_t)amd64_data->pthread_teb );
+ #endif
+     if (is_16bit( sigcontext )) return;
+ #ifdef DS_sig
+@@ -1683,7 +1683,7 @@
+                    "1:\n\t"
+ #elif defined __APPLE__
+                    "movq %rcx,%r10\n\t"
+-                   "movq %r13,%rdi\n\t"
++                   "movq 0x320(%r13),%rdi\n\t"
+                    "xorl %esi,%esi\n\t"
+                    "movl $0x3000003,%eax\n\t"  /* _thread_set_tsd_base */
+                    "syscall\n\t"
+@@ -2873,7 +2873,12 @@
+ #elif defined(__NetBSD__)
+     sysarch( X86_64_SET_GSBASE, &teb );
+ #elif defined (__APPLE__)
++    /* D3DMetal callbacks also execute native pthread code on Windows threads. */
++    __asm__ volatile ("movq %0,%%gs:%c1" :: "r" (teb->Tib.Self), "n" (FIELD_OFFSET(TEB, Tib.Self)));
++    __asm__ volatile ("movq %0,%%gs:%c1" :: "r" (teb->ThreadLocalStoragePointer), "n" (FIELD_OFFSET(TEB, ThreadLocalStoragePointer)));
++    __asm__ volatile ("movq %0,%%gs:%c1" :: "r" (teb->Peb), "n" (FIELD_OFFSET(TEB, Peb)));
+     thread_data->pthread_teb = mac_thread_gsbase();
++    teb->Instrumentation[0] = thread_data->pthread_teb;
+ #else
+ # error Please define setting %gs for your architecture
+ #endif
+@@ -2982,7 +2987,12 @@
+  */
+ __ASM_GLOBAL_FUNC( __wine_syscall_dispatcher,
+                    __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_gs_load") ":\n\t"
+-                   "movq %gs:0x378,%rcx\n\t"       /* thread_data->syscall_frame */
++#ifdef __APPLE__
++                   "movq %gs:0x30,%rcx\n\t"
++                   "movq 0x378(%rcx),%rcx\n\t"
++#else
++                   "movq %gs:0x378,%rcx\n\t"
++#endif       /* thread_data->syscall_frame */
+                    "popq 0x70(%rcx)\n\t"           /* frame->rip */
+                    __ASM_CFI(".cfi_adjust_cfa_offset -8\n\t")
+                    __ASM_CFI_REG_IS_AT2(rip, rcx, 0xf0,0x00)
+@@ -3140,7 +3150,7 @@
+ #elif defined __APPLE__
+                    "movq %rax,%r8\n\t"
+                    "movq %rcx,%rdx\n\t"
+-                   "movq %r13,%rdi\n\t"            /* teb */
++                   "movq 0x320(%r13),%rdi\n\t"            /* teb */
+                    "xorl %esi,%esi\n\t"
+                    "movl $0x3000003,%eax\n\t"      /* _thread_set_tsd_base */
+                    "syscall\n\t"
+@@ -3234,7 +3244,12 @@
+                    "popfq\n\t"
+                    "iretq\n"
+                    /* RESTORE_FLAGS_INSTRUMENTATION */
+-                   "2:\tmovq %gs:0x330,%r10\n\t"  /* amd64_thread_data()->instrumentation_callback */
++#ifdef __APPLE__
++                   "2:\tmovq %gs:0x30,%r10\n\t"
++                   "movq 0x330(%r10),%r10\n\t"
++#else
++                   "2:\tmovq %gs:0x330,%r10\n\t"
++#endif  /* amd64_thread_data()->instrumentation_callback */
+                    "movq (%r10),%r10\n\t"
+                    "test %r10,%r10\n\t"
+                    "jz 3b\n\t"
+@@ -3293,7 +3308,12 @@
+                    "jmp " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
+ 
+ __ASM_GLOBAL_FUNC( __wine_syscall_dispatcher_instrumentation,
+-                   "movq %gs:0x378,%rcx\n\t"       /* thread_data->syscall_frame */
++#ifdef __APPLE__
++                   "movq %gs:0x30,%rcx\n\t"
++                   "movq 0x378(%rcx),%rcx\n\t"
++#else
++                   "movq %gs:0x378,%rcx\n\t"
++#endif       /* thread_data->syscall_frame */
+                    "popq 0x70(%rcx)\n\t"           /* frame->rip */
+                    __ASM_CFI(".cfi_adjust_cfa_offset -8\n\t")
+                    __ASM_CFI_REG_IS_AT2(rip, rcx, 0xf0,0x00)
+@@ -3311,7 +3331,12 @@
+ __ASM_GLOBAL_FUNC( __wine_unix_call_dispatcher,
+                    "movq %rcx,%r10\n\t"
+                    __ASM_LOCAL_LABEL("__wine_unix_call_dispatcher_gs_load") ":\n\t"
+-                   "movq %gs:0x378,%rcx\n\t"       /* thread_data->syscall_frame */
++#ifdef __APPLE__
++                   "movq %gs:0x30,%rcx\n\t"
++                   "movq 0x378(%rcx),%rcx\n\t"
++#else
++                   "movq %gs:0x378,%rcx\n\t"
++#endif       /* thread_data->syscall_frame */
+                    "popq 0x70(%rcx)\n\t"           /* frame->rip */
+                    __ASM_CFI(".cfi_adjust_cfa_offset -8\n\t")
+                    __ASM_CFI_REG_IS_AT2(rip, rcx, 0xf0,0x00)
+@@ -3410,7 +3435,7 @@
+ #elif defined __APPLE__
+                    "movq %rax,%rdx\n\t"
+                    "movq %rcx,%r14\n\t"
+-                   "movq %r13,%rdi\n\t"            /* teb */
++                   "movq 0x320(%r13),%rdi\n\t"            /* teb */
+                    "xorl %esi,%esi\n\t"
+                    "movl $0x3000003,%eax\n\t"      /* _thread_set_tsd_base */
+                    "syscall\n\t"
+--- a/dlls/ntdll/loader.c
++++ b/dlls/ntdll/loader.c
+@@ -1393,6 +1393,9 @@
+             if (!new) return FALSE;
+             if (old) memcpy( new, old, old_module_count * sizeof(*new) );
+             teb->ThreadLocalStoragePointer = new;
++#ifdef __x86_64__  /* macOS pthread GS compatibility */
++            if (teb->Instrumentation[0]) ((TEB *)teb->Instrumentation[0])->ThreadLocalStoragePointer = new;
++#endif
+             TRACE( "thread %04lx tls block %p -> %p\n", HandleToULong(teb->ClientId.UniqueThread), old, new );
+             /* FIXME: can't free old block here, should be freed at thread exit */
+         }
+@@ -1638,6 +1641,10 @@
+         TRACE( "slot %u: %u/%lu bytes at %p\n", i, size, dir->SizeOfZeroFill, pointers[i] );
+     }
+     NtCurrentTeb()->ThreadLocalStoragePointer = pointers;
++#ifdef __x86_64__  /* macOS pthread GS compatibility */
++    if (NtCurrentTeb()->Instrumentation[0])
++        ((TEB *)NtCurrentTeb()->Instrumentation[0])->ThreadLocalStoragePointer = pointers;
++#endif
+     return STATUS_SUCCESS;
+ }
+ 
+--- a/dlls/ntdll/unix/loader.c
++++ b/dlls/ntdll/unix/loader.c
+@@ -1848,6 +1848,48 @@
+     return 0;
+ }
+ 
++#if defined(__APPLE__) && defined(__x86_64__)
++static __thread struct tm localtime_tls;
++struct tm *my_localtime(const time_t *timep)
++{
++    return localtime_r(timep, &localtime_tls);
++}
++
++static void hook(void *to_hook, const void *replace)
++{
++    size_t offset;
++
++    struct hooked_function
++    {
++        char jmp[8];
++        const void *dst;
++    } *hooked_function = to_hook;
++    ULONG_PTR intval = (UINT_PTR)to_hook;
++
++    intval -= (intval % 4096);
++    mprotect((void *)intval, 0x2000, PROT_EXEC | PROT_READ | PROT_WRITE);
++
++    /* The offset is from the end of the jmp instruction (6 bytes) to the start of the destination. */
++    offset = offsetof(struct hooked_function, dst) - offsetof(struct hooked_function, jmp) - 0x6;
++
++    /* jmp *(rip + offset) */
++    hooked_function->jmp[0] = 0xff;
++    hooked_function->jmp[1] = 0x25;
++    hooked_function->jmp[2] = offset;
++    hooked_function->jmp[3] = 0x00;
++    hooked_function->jmp[4] = 0x00;
++    hooked_function->jmp[5] = 0x00;
++    /* Filler */
++    hooked_function->jmp[6] = 0xcc;
++    hooked_function->jmp[7] = 0xcc;
++    /* Dest address absolute */
++    hooked_function->dst = replace;
++
++    //size = sizeof(*hooked_function);
++    //NtProtectVirtualMemory(proc, (void **)hooked_function, &size, old_protect, &old_protect);
++}
++#endif
++
+ /***********************************************************************
+  *           start_main_thread
+  */
+@@ -1868,6 +1910,10 @@
+     load_ntdll();
+     load_wow64_ntdll( main_image_info.Machine );
+     load_apiset_dll();
++#if defined(__APPLE__) && defined(__x86_64__)
++    /* Native pthread GS slots mirror the PEB; localtime must use separate TLS. */
++    hook(localtime, my_localtime);
++#endif
+     server_init_process_done();
+ }
+ 
