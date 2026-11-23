@@ -470,7 +470,8 @@ public final class WineService: @unchecked Sendable {
     static let runtimeDrive = "y"
 
     /// The bottle's Windows version, display resolution mode, and per-program values.
-    public static func profile(for bottle: Bottle) -> String {
+    /// `removedPrograms`: programs that were games once; their per-program keys are emptied.
+    public static func profile(for bottle: Bottle, removedPrograms: [String] = []) -> String {
         let dpi = bottle.retinaMode ? "000000c0" : "00000060"
         return """
         Windows Registry Editor Version 5.00
@@ -488,7 +489,7 @@ public final class WineService: @unchecked Sendable {
         [HKEY_CURRENT_USER\\Software\\Wine\\Fonts]
         "LogPixels"=dword:\(dpi)
 
-        """ + controllerRegistry(bottle.controllers) + componentRegistry(bottle) + gameRegistry(bottle.games)
+        """ + controllerRegistry(bottle.controllers) + componentRegistry(bottle) + gameRegistry(bottle.games, removed: removedPrograms)
             + (bottle.launcher?.registry ?? "")
             // Rockstar's games open the Rockstar Games Launcher from any store (GTA V and Red Dead
             // Redemption 2 bought on Steam or Epic too), so its Social Club window needs its fix everywhere.
@@ -510,9 +511,14 @@ public final class WineService: @unchecked Sendable {
         guard !dlls.isEmpty else { return "" }
         return "[HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides]\n" + dlls.map { "\"\($0)\"=\"native,builtin\"" }.joined(separator: "\n") + "\n\n"
     }
-    /// Per-program settings by file name. Each game's keys are rewritten, so cleared settings go away.
-    static func gameRegistry(_ games: [Game]) -> String {
+    /// Per-program settings by file name. Each game's keys are rewritten, so cleared settings go away; a removed
+    /// program's are emptied the same way, as for a game without settings.
+    static func gameRegistry(_ games: [Game], removed: [String] = []) -> String {
         var lines: [String] = []
+        for program in removed {
+            let key = "HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\\(program)"
+            lines += ["[-\(key)\\DllOverrides]", "[\(key)]", "\"Version\"=-", ""]
+        }
         for game in games {
             let key = "HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\\(game.programName)"
             lines.append("[-\(key)\\DllOverrides]")
@@ -528,9 +534,27 @@ public final class WineService: @unchecked Sendable {
     public func applyProfile(_ bottle: Bottle) async throws {
         let directory = paths.bottle(bottle).drive.appendingPathComponent("Portnaut")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try Data(Self.profile(for: bottle).utf8).write(to: directory.appendingPathComponent("profile.reg"), options: .atomic)
+        // The programs Portnaut may have written per-program keys for, one per line, so a game removed since has its
+        // keys emptied. A removed program stays in the record until an import that empties it succeeds; then the
+        // record holds the games alone, and keys set up by hand later (winecfg) are left alone. A successful import
+        // is not yet on disk: should the Wine server be killed before it saves the registry, those keys stay.
+        let record = directory.appendingPathComponent("programs")
+        let previous = FileManager.default.fileExists(atPath: record.path) ? try String(contentsOf: record, encoding: .utf8) : ""
+        let games = Self.uniquePrograms(bottle.games.map(\.programName))
+        let removed = Self.uniquePrograms(previous.split(separator: "\n").map(String.init))
+            .filter { program in !games.contains { $0.caseInsensitiveCompare(program) == .orderedSame } }
+        try Data((removed + games).map { $0 + "\n" }.joined().utf8).write(to: record, options: .atomic)
+        try Data(Self.profile(for: bottle, removedPrograms: removed).utf8).write(to: directory.appendingPathComponent("profile.reg"), options: .atomic)
         try await ProcessRunner.run(paths.wine(for: bottle.renderer), ["reg", "import", "C:\\Portnaut\\profile.reg"], environment: environment(for: bottle),
                                     directory: paths.bottle(bottle).drive, log: paths.setupLog, timeout: 30)
+        if !removed.isEmpty { try Data(games.map { $0 + "\n" }.joined().utf8).write(to: record, options: .atomic) }
+    }
+
+    /// Program names without repeats; Wine compares key names case-insensitively.
+    static func uniquePrograms(_ names: [String]) -> [String] {
+        names.reduce(into: []) { unique, name in
+            if !name.isEmpty, !unique.contains(where: { $0.caseInsensitiveCompare(name) == .orderedSame }) { unique.append(name) }
+        }
     }
 
     /// Saves changed settings and applies the registry part, which takes effect for the next programs started.
