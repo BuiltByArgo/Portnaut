@@ -1035,6 +1035,44 @@ final class CoreTests {
         #expect(service.snapshots(of: bottle).first?.automatic == true)
     }
 
+    @Test func testRestoresRefuseABottleWhoseWineIsStillRunning() async throws {
+        let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
+        let fm = FileManager.default
+        let bottle = Bottle(id: "r", name: "Running", renderer: .dxmt)
+        try service.paths.saveLibrary(Library(bottles: [bottle]))
+        let save = service.paths.bottle(bottle).drive.appendingPathComponent("users/player/Saved Games/Game/slot1.sav")
+        try fm.createDirectory(at: save.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("one".utf8).write(to: save)
+        let snapshot = try service.takeSnapshot(of: bottle, label: "One")
+        let backup = try await service.backUpSaves(of: bottle)
+        try Data("two".utf8).write(to: save)
+        // The renderer's wineserver alone, no runtime (so stop does nothing): -k0 for this bottle's prefix exits
+        // with `status` (0 a server runs, 1 none); any other call exits 9, which no restore may take for "none".
+        let wineserver = service.paths.wineserver(for: bottle.renderer)
+        try fm.createDirectory(at: wineserver.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let prefix = service.paths.bottle(bottle).prefix.path
+        func probe(exiting status: Int) throws {
+            let script = "#!/bin/sh\n[ \"$1\" = -k0 ] && [ \"$WINEPREFIX\" = '\(prefix)' ] && exit \(status)\nexit 9\n"
+            try Data(script.utf8).write(to: wineserver)
+            try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: wineserver.path)
+        }
+
+        // A server still running, and a probe that fails, both stop either restore before it changes anything.
+        for status in [0, 3] {
+            try probe(exiting: status)
+            await #expect(throws: PortnautError.self) { try await service.restoreSnapshot(snapshot, of: bottle) }
+            await #expect(throws: PortnautError.self) { try await service.restoreSaves(backup, to: bottle) }
+            #expect(try String(contentsOf: save, encoding: .utf8) == "two")
+            #expect(service.snapshots(of: bottle).filter(\.automatic).isEmpty)
+        }
+        try probe(exiting: 1)
+        try await service.restoreSaves(backup, to: bottle)
+        #expect(try String(contentsOf: save, encoding: .utf8) == "one")
+        try Data("two".utf8).write(to: save)
+        try await service.restoreSnapshot(snapshot, of: bottle)
+        #expect(try String(contentsOf: save, encoding: .utf8) == "one")
+    }
+
     // MARK: - Component updates
 
     static func manifest(id: String, channel: String? = nil, dxmt: String = "dxmt-highball-20260930T161516Z-a444716", d3dmetal: Bool = false) -> Data {
