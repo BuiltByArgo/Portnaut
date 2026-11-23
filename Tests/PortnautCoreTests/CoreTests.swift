@@ -854,6 +854,40 @@ final class CoreTests {
         #expect(!profile.contains("msvcp120"))
     }
 
+    @Test func testRemovedGamesProgramKeysAreEmptiedAtTheNextImport() async throws {
+        let paths = PortnautPaths(root: root), service = WineService(paths: paths, metalShim: nil)
+        var bottle = Bottle(id: "b", name: "B", renderer: .dxmt)
+        var game = Game(id: "g", name: "G", executable: "Games/G/game.exe")
+        game.dllOverrides = ["dinput8": .nativeThenBuiltin]
+        game.windowsVersion = .win7
+        bottle.games = [game, Game(id: "h", name: "H", executable: "Games/H/h.exe")]
+        // A wine that keeps the file it is asked to import, and fails while "fail" exists.
+        let wine = paths.wine(for: bottle.renderer), drive = paths.bottle(bottle).drive
+        try FileManager.default.createDirectory(at: wine.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: drive, withIntermediateDirectories: true)
+        try Data("#!/bin/sh\n[ -e fail ] && exit 1\ncat Portnaut/profile.reg > imported.reg\n".utf8).write(to: wine)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: wine.path)
+        func imported() throws -> String { try String(contentsOf: drive.appendingPathComponent("imported.reg"), encoding: .utf8) }
+        let emptied = "[-HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\game.exe\\DllOverrides]\n[HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\game.exe]\n\"Version\"=-"
+        try await service.applyProfile(bottle)
+        #expect(try imported().contains("\"dinput8\"=\"native,builtin\""))
+        // Removed from the library, the game's keys are emptied, also when that import failed first.
+        bottle.games.removeAll { $0.id == "g" }
+        try Data().write(to: drive.appendingPathComponent("fail"))
+        await #expect(throws: PortnautError.self) { try await service.applyProfile(bottle) }
+        try FileManager.default.removeItem(at: drive.appendingPathComponent("fail"))
+        try await service.applyProfile(bottle)
+        #expect(try imported().contains(emptied))
+        #expect(try imported().contains("AppDefaults\\h.exe]\n\"Version\"=-"))
+        // Once emptied, the program is left alone, so keys set up later by hand stay.
+        try await service.applyProfile(bottle)
+        #expect(try !imported().contains("game.exe"))
+        // The last game removed is emptied too.
+        bottle.games = []
+        try await service.applyProfile(bottle)
+        #expect(try imported().contains("[-HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\h.exe\\DllOverrides]\n[HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\h.exe]\n\"Version\"=-"))
+    }
+
     @Test func testUserEnvironmentAddsToPortnautsButCannotReplaceIt() {
         let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
         var bottle = Bottle(id: "b", name: "B", renderer: .d3dmetal)
