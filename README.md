@@ -151,7 +151,7 @@ Portnaut itself contains only its own code. When you ask it to, it downloads:
 | --- | --- | --- |
 | Wine 11, DXMT and MoltenVK | Highball's public releases on GitHub (Wine built from the sources CodeWeavers publishes) | LGPL, Apache-2.0 |
 | D3DMetal, DXVK, GStreamer, SDL and support libraries | The Sikarugir project's public template on GitHub | Apple's Game Porting Toolkit licence for D3DMetal; open-source licences for the rest |
-| For a Rockstar Games (D3DMetal) bottle: Wine 11.13 with MacGames' GTA V patches, and two more Sikarugir templates (D3DMetal 4.0 beta 3 and the engine's libraries) | rofrol/Portnaut's public release on GitHub (with its source and patches); the Sikarugir project on GitHub | LGPL for Wine; as above for the templates |
+| For a Rockstar Games (GTA V Enhanced) bottle: Wine 11.13 with MacGames' GTA V patches, and two more Sikarugir templates (D3DMetal 4.0 beta 3 and the engine's libraries) | rofrol/Portnaut's public release on GitHub (with its source and patches); the Sikarugir project on GitHub | LGPL for Wine; as above for the templates |
 | Game launchers (Steam, the EA app, Ubisoft Connect, the Epic Games Launcher, Battle.net, the Rockstar Games Launcher, GOG Galaxy, Amazon Games) | Their publishers: Valve, Electronic Arts, Ubisoft, Epic Games, Blizzard, Rockstar Games, GOG and Amazon | Their own terms, which their installers show |
 | Visual C++, .NET and DirectX components | Microsoft | Microsoft's terms; Portnaut asks you to accept them first |
 | The compatibility list behind Will It Run? (a copy ships in the app) | Highball's public database: [highball-db](https://github.com/gauthierpiarrette/highball-db) | CC0; predictions from ProtonDB's Linux reports under the ODbL; the anti-cheat list from Are We Anti-Cheat Yet? under MIT |
@@ -186,9 +186,9 @@ Its logs stay on your Mac. A diagnostics report is a file you choose to save and
 - DirectX 12 games need the D3DMetal renderer.
 - The Rockstar Games Launcher doesn't start on Portnaut's D3DMetal, so ordinary Rockstar Games bottles use
   DXMT or DXVK. In Red Dead Redemption 2, choose Vulkan in its graphics settings. For GTA V Enhanced, which
-  needs DirectX 12, create a **Rockstar Games (D3DMetal)** bottle: its own Wine 11.13 runs the game on
-  D3DMetal and draws the launcher and Social Club with Wine's own Direct3D. That engine stays with the
-  bottle; to leave it, back up the saves, create another bottle and restore them there.
+  needs DirectX 12, create a **Rockstar Games (GTA V Enhanced)** bottle: its own Wine 11.13 runs the
+  game on D3DMetal and draws the launcher and Social Club with Wine's own Direct3D. That engine stays
+  with the bottle; to leave it, back up the saves, create another bottle and restore them there.
 - The windows of Steam, Battle.net, Rockstar's Social Club, GOG Galaxy and Amazon Games are drawn in
   software; games are not.
 - New and not yet tried with real games: Find My Best Setup's rounds, and Couch Mode with a controller.

@@ -42,7 +42,7 @@ public enum EngineProfile: String, Codable, CaseIterable, Sendable, Identifiable
     /// The kind of bottle the profile makes, beside the launcher's own in the New Bottle sheet.
     public var bottleKind: String {
         switch self {
-        case .gta5Enhanced: "Rockstar Games (D3DMetal)"
+        case .gta5Enhanced: "Rockstar Games (GTA V Enhanced)"
         }
     }
 

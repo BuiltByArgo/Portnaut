@@ -35,9 +35,9 @@ Compatibility components are downloaded separately from their maintainers. The s
 - GStreamer and many of its libraries are LGPL; dependent libraries have their own licenses. Preserve the framework's bundled notices. Upstream source: https://gstreamer.freedesktop.org/.
 - SDL 2 (`libSDL2-2.0.0.dylib`, zlib licence, https://www.libsdl.org/) is among those libraries; Wine's controller driver loads it.
 
-## GTA V Enhanced engine — Rockstar Games (D3DMetal) bottles only
+## GTA V Enhanced engine
 
-Downloaded only for Rockstar Games (D3DMetal) bottles, when the first one is created or a newer Portnaut changes these pins. Each archive is checked against its pinned SHA-256 and kept in the data folder's download cache; the engine is assembled from them in `Runtimes/profiles/gta5-enhanced/`.
+Downloaded only for Rockstar Games (GTA V Enhanced) bottles, when the first one is created or a newer Portnaut changes these pins. Each archive is checked against its pinned SHA-256 and kept in the data folder's download cache; the engine is assembled from them in `Runtimes/profiles/gta5-enhanced/`.
 
 - Engine: https://github.com/rofrol/Portnaut/releases/tag/gta5-wine-11.13-8c2133a8baac-r3, archive `gta5-wine-11.13-8c2133a8baac-r3.tar.xz`, SHA-256 `da363c8f004cd21e9a635d0511274612a86207eccabf77837130f1d86da54619`. It is WineHQ's Wine 11.13 (LGPL-2.1-or-later) for Intel, run through Rosetta, with seven of MacGames' patches (d3dmetal-unix-call, kernelbase-cef, mac-d3dmetal-surface, mac-keyboard-reset, mac-native-gs, rockstar-feature-level, wine-native-copy), built by the `build-gta5-wine` workflow on rofrol/Portnaut's `gta5-wine-engine` branch. The release carries the corresponding Wine source and the patches. The archive's `launcher-wined3d/` holds that build's own `d3d11`, `dxgi` and `d3d10core`, which Portnaut copies into the bottle's system32 for the Rockstar Games Launcher and Social Club.
 - Template 1.0.15: https://github.com/Sikarugir-App/Wrapper/releases/download/v1.0/Template-1.0.15.tar.xz, SHA-256 `34273bcce885ce5a7fd6937af9ea344bb9961de7d55d6193f7413142e835c8c3`. From `Contents/Frameworks`, the engine's support libraries (GStreamer LGPL, SDL zlib and the others named above, under their own licences) and D3DMetal's `atidxx64.dll`. The Sikarugir SDK and wrapper launcher are not used.
