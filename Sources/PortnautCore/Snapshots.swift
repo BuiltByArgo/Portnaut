@@ -102,7 +102,7 @@ extension WineService {
         let fm = FileManager.default
         let source = paths.snapshots(of: bottle).appendingPathComponent(snapshot.id).appendingPathComponent("prefix")
         guard fm.fileExists(atPath: source.path) else { throw PortnautError("That snapshot is no longer in Portnaut’s data folder.") }
-        try? await stop(bottle)
+        try await stopForRestore(bottle)
         let prefix = paths.bottle(bottle).prefix
         if fm.fileExists(atPath: prefix.path) {
             try takeSnapshot(of: bottle, label: "Before restoring “\(snapshot.label)”", automatic: true)
@@ -118,6 +118,20 @@ extension WineService {
             if let now = current.first(where: { $0.id == restored.games[index].id }) { restored.games[index].performance = now.performance }
         }
         try save(restored)
+    }
+
+    /// Stops the bottle before a restore replaces its files, and refuses while a Wine server still runs for
+    /// its prefix. Stopping is only asked for (wineserver -k fails when no server runs, and gives up after its
+    /// timeout on a program that does not quit); what decides is `wineserver -k0`, which signals the prefix's
+    /// server with 0: it exits 0 when one runs and 1 when none does. A bottle whose renderer has no wineserver
+    /// (no runtime installed) has no server to ask.
+    func stopForRestore(_ bottle: Bottle) async throws {
+        try? await stop(bottle)
+        let wineserver = paths.wineserver(for: bottle.renderer)
+        guard FileManager.default.isExecutableFile(atPath: wineserver.path) else { return }
+        let status = try await ProcessRunner.run(wineserver, ["-k0"], environment: environment(for: bottle), log: paths.sessionLog, allowFailure: true)
+        guard status != 0 else { throw PortnautError("Quit the Windows programs running in \(bottle.name) first, then try again.") }
+        guard status == 1 else { throw PortnautError("Portnaut could not check whether \(bottle.name) is still running (wineserver exited with code \(status)). See session.log in Diagnostics for details.") }
     }
 
     /// Moves a snapshot to the Trash.
@@ -177,7 +191,7 @@ extension WineService {
     public func restoreSaves(_ backup: SaveBackup, to bottle: Bottle) async throws {
         let source = paths.saveBackups.appendingPathComponent(bottle.id).appendingPathComponent(backup.id).appendingPathComponent("drive_c")
         guard FileManager.default.fileExists(atPath: source.path) else { throw PortnautError("That backup is no longer in Portnaut Backups.") }
-        try? await stop(bottle)
+        try await stopForRestore(bottle)
         try takeSnapshot(of: bottle, label: "Before restoring saves from \(backup.id)", automatic: true)
         let drive = paths.bottle(bottle).drive
         _ = try await Task.detached { try Self.copyTree(from: source, to: drive, skipping: { _ in false }, overwrite: true) }.value
