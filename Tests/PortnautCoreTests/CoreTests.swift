@@ -1001,6 +1001,42 @@ final class CoreTests {
         #expect(kept.contains { $0.label == "Chapter 1" && !$0.automatic })
     }
 
+    @Test func testAFailedRestoreLeavesTheBottleAsItWas() async throws {
+        let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
+        let bottle = Bottle(id: "r", name: "Restore", renderer: .dxmt)
+        try service.paths.saveLibrary(Library(bottles: [bottle]))
+        let drive = service.paths.bottle(bottle).drive
+        try FileManager.default.createDirectory(at: drive, withIntermediateDirectories: true)
+        let snapshot = try service.takeSnapshot(of: bottle, label: "Earlier")
+        let later = drive.appendingPathComponent("after-snapshot.txt")
+        try Data("kept".utf8).write(to: later)
+        let staged = service.paths.bottles.appendingPathComponent(".r.restoring")
+
+        // clonefile has to read the whole tree: a folder no one may read makes it fail with EACCES.
+        let unreadable = service.paths.snapshots(of: bottle).appendingPathComponent(snapshot.id).appendingPathComponent("prefix/unreadable")
+        try FileManager.default.createDirectory(at: unreadable, withIntermediateDirectories: true)
+        #expect(chmod(unreadable.path, 0) == 0)
+        defer { chmod(unreadable.path, 0o755) }
+        let error = await #expect(throws: PortnautError.self) { try await service.restoreSnapshot(snapshot, of: try service.bottle("r")) }
+        #expect(error?.message == "Portnaut could not restore the snapshot (Permission denied).")
+        #expect(try String(contentsOf: later, encoding: .utf8) == "kept")
+        #expect(!FileManager.default.fileExists(atPath: staged.path))
+
+        // A clone left behind by a restore that stopped part-way does not stand in the way of the next one.
+        #expect(chmod(unreadable.path, 0o755) == 0)
+        try FileManager.default.createDirectory(at: staged.appendingPathComponent("drive_c"), withIntermediateDirectories: true)
+        try await service.restoreSnapshot(snapshot, of: try service.bottle("r"))
+        #expect(!FileManager.default.fileExists(atPath: later.path))
+        #expect(FileManager.default.fileExists(atPath: drive.path))
+        #expect(!FileManager.default.fileExists(atPath: staged.path))
+
+        // A bottle that lost its prefix gets the snapshot's back.
+        try FileManager.default.removeItem(at: service.paths.bottle(bottle).prefix)
+        try await service.restoreSnapshot(snapshot, of: try service.bottle("r"))
+        #expect(FileManager.default.fileExists(atPath: drive.path))
+        #expect(!FileManager.default.fileExists(atPath: staged.path))
+    }
+
     @Test func testSaveBackupsSkipCachesAndRestoreOverTheBottle() async throws {
         let service = WineService(paths: PortnautPaths(root: root), metalShim: nil)
         let bottle = Bottle(id: "b", name: "Backups", renderer: .dxmt)

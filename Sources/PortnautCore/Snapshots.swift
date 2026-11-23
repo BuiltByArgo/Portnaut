@@ -103,12 +103,27 @@ extension WineService {
         let source = paths.snapshots(of: bottle).appendingPathComponent(snapshot.id).appendingPathComponent("prefix")
         guard fm.fileExists(atPath: source.path) else { throw PortnautError("That snapshot is no longer in Portnaut’s data folder.") }
         try? await stop(bottle)
+        // The snapshot is cloned beside the prefix and swapped in at once, so a failure or a crash leaves the
+        // current prefix or the restored one in place, never none. Whatever a restore that stopped part-way left
+        // at the clone's place is removed first (attributesOfItem does not follow a symlink).
         let prefix = paths.bottle(bottle).prefix
-        if fm.fileExists(atPath: prefix.path) {
-            try takeSnapshot(of: bottle, label: "Before restoring “\(snapshot.label)”", automatic: true)
-            try fm.removeItem(at: prefix)
+        let staged = paths.bottles.appendingPathComponent(".\(bottle.id).restoring")
+        if (try? fm.attributesOfItem(atPath: staged.path)) != nil { try fm.removeItem(at: staged) }
+        func failed(_ code: Int32) -> PortnautError { PortnautError("Portnaut could not restore the snapshot (\(String(cString: strerror(code)))).") }
+        do {
+            guard clonefile(source.path, staged.path, 0) == 0 else { throw failed(errno) }
+            if fm.fileExists(atPath: prefix.path) {
+                try takeSnapshot(of: bottle, label: "Before restoring “\(snapshot.label)”", automatic: true)
+                guard renamex_np(staged.path, prefix.path, UInt32(RENAME_SWAP)) == 0 else { throw failed(errno) }
+            } else {
+                guard rename(staged.path, prefix.path) == 0 else { throw failed(errno) }
+            }
+        } catch {
+            try? fm.removeItem(at: staged)
+            throw error
         }
-        guard clonefile(source.path, prefix.path, 0) == 0 else { throw PortnautError("Portnaut could not restore the snapshot (\(String(cString: strerror(errno)))).") }
+        // The replaced prefix, already kept in the automatic snapshot. One left here is removed by the next restore.
+        try? fm.removeItem(at: staged)
         var restored = snapshot.bottle
         restored.id = bottle.id
         restored.name = (try? self.bottle(bottle.id).name) ?? bottle.name
