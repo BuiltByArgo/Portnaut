@@ -1,5 +1,6 @@
 # Builds the GTA V Enhanced Wine engine (engines/gta5-wine/README.md) and publishes it with its
-# source as a release tagged gta5-wine-11.13-<commit>-r<run number>, one per run.
+# source as a release tagged gta5-wine-11.13-<commit>-r<run number>, one per run. It runs when the
+# gta5-wine-engine branch is pushed, so a release can exist before EngineProfile pins it, and on demand.
 name: build-gta5-wine
 on:
   push:
@@ -129,12 +130,14 @@ jobs:
             ${{ runner.temp }}/wine-${{ env.WINE_VERSION }}.tar.xz
             ${{ runner.temp }}/SHA256SUMS
           retention-days: 14
+      # --latest=false: Portnaut's update feed is releases/latest/download/appcast.xml (SelfUpdate.swift),
+      # so an engine release must never become the repository's latest release.
       - name: release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP"
-          gh release create "$NAME" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$NAME" \
+          gh release create "$NAME" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$NAME" --latest=false \
             --notes "Wine $WINE_VERSION from WineHQ's source with the patches in engines/gta5-wine/patches, for Portnaut's GTA V Enhanced engine profile. Built by run $GITHUB_RUN_ID from $GITHUB_SHA. The source tarball and the patches are attached; checksums in SHA256SUMS. LGPL 2.1 or later." \
             "$NAME.tar.xz" "$NAME-patches.tar.gz" "wine-$WINE_VERSION.tar.xz" SHA256SUMS

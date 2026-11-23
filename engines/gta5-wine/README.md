@@ -2,7 +2,7 @@
 
 Wine 11.13 with the patches GTA V Enhanced and the Rockstar Games Launcher need on
 macOS with Apple's D3DMetal, built by `.github/workflows/build-gta5-wine.yml` and
-published in this fork's releases.
+published in this repository's releases.
 
 ## Inputs
 
@@ -14,7 +14,7 @@ published in this fork's releases.
   seven patches of MacGames' `gta5` pack (`Sources/patches/` in
   `macgames-pack-gta5.tar.xz`, https://github.com/tarikbc/macgames/releases/tag/packs-1,
   SHA-256 bc8d15d5ad6713e6a192de6d78e0534a2925db886d7a9225efdf52c25fcc7499),
-  unchanged, and `wine-native-copy.patch`, this fork's own: `tools/makedep` links a module
+  unchanged, and `wine-native-copy.patch`, written for Portnaut: `tools/makedep` links a module
   whose `Makefile.in` sets `NATIVECOPY` once more without Wine's builtin mark, as
   `<module>-native.dll` beside it (set for d3d11, dxgi and d3d10core). Like Wine, the patches
   are under the GNU LGPL 2.1 or later (`Wine-LGPL-2.1.txt`).
