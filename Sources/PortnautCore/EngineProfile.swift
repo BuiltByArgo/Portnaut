@@ -229,11 +229,34 @@ public enum EngineProfile: String, Codable, CaseIterable, Sendable, Identifiable
             + ["d3d11", "dxgi", "d3d10core"].map { (wined3d.appendingPathComponent("\($0).dll"), "\($0).dll") }
     }
 
-    /// The game's arguments live in commandline.txt: the launcher starts GTA5_Enhanced.exe with
-    /// @commandline.txt. Without -disableSpatialAudioClient voices and most effects are silent under
+    /// The game's arguments live in commandline.txt in the game's folder: the launcher starts GTA5_Enhanced.exe
+    /// with @commandline.txt. Without -disableSpatialAudioClient voices and most effects are silent under
     /// Wine; -nobattleye skips BattlEye, which is for GTA Online only (tested).
     static let gameFolder = "Program Files/Rockstar Games/Grand Theft Auto V Enhanced"
+    static let gameExecutable = "GTA5_Enhanced.exe"
     static let gameArguments = ["-disableSpatialAudioClient", "-nobattleye"]
+
+    /// The folder the launcher installed the game in, as it records it in system.reg (the default folder or one
+    /// the user chose), with Wine's escaping undone. A value with escapes other than a doubled backslash is not
+    /// read.
+    static func recordedGameFolder(systemRegistry: String) -> String? {
+        let section = "[software\\\\wow6432node\\\\rockstar games\\\\gtav enhanced]"
+        let prefix = "\"InstallFolder\"=\""
+        var inSection = false
+        for line in systemRegistry.split(whereSeparator: \.isNewline) {
+            if line.hasPrefix("[") { inSection = line.lowercased().hasPrefix(section); continue }
+            guard inSection, line.hasPrefix(prefix), line.hasSuffix("\""), line.count > prefix.count else { continue }
+            var folder = "", escaped = false
+            for character in line.dropFirst(prefix.count).dropLast() {
+                if escaped { guard character == "\\" else { return nil }; folder.append("\\"); escaped = false }
+                else if character == "\\" { escaped = true }
+                else if character == "\"" { return nil }
+                else { folder.append(character) }
+            }
+            return escaped || folder.isEmpty ? nil : folder
+        }
+        return nil
+    }
 
     /// The commandline.txt contents with the required arguments added to the user's, each once.
     static func commandLine(merging existing: String?) -> String {

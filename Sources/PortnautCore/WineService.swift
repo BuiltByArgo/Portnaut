@@ -656,15 +656,51 @@ public final class WineService: @unchecked Sendable {
         }
         try writeGameArguments(to: bottlePaths)
     }
-    /// Adds the profile's game arguments to commandline.txt once the game is installed in its default folder.
-    /// Runs before every program Portnaut starts in a profile bottle, so a game the launcher installs later gets
-    /// them from the next such start on. A file that is not UTF-8 is left as it is rather than lose the user's
-    /// arguments.
-    func writeGameArguments(to bottlePaths: BottlePaths) throws {
-        let game = bottlePaths.drive.appendingPathComponent(EngineProfile.gameFolder)
-        guard FileManager.default.fileExists(atPath: game.path) else { return }
+    /// Adds the profile's game arguments to commandline.txt in each folder of the bottle the game is installed in:
+    /// the default one, the one the launcher recorded in system.reg, and `folders` (where a session's watch saw
+    /// the game appear). Runs before and after every program Portnaut starts in a profile bottle, and while it
+    /// runs whenever the game's files change (GameArgumentsWatch), so the first Play in the launcher session that
+    /// installs the game has them too.
+    func writeGameArguments(to bottlePaths: BottlePaths, also folders: [URL] = []) throws {
+        // A session's watch writes from its own queue: one pass at a time, so none publishes a merge of a file
+        // another pass has already replaced.
+        gameArgumentsLock.lock()
+        defer { gameArgumentsLock.unlock() }
+        var candidates = [bottlePaths.drive.appendingPathComponent(EngineProfile.gameFolder)] + folders
+        let registry = bottlePaths.prefix.appendingPathComponent("system.reg")
+        if let text = try? String(contentsOf: registry, encoding: .utf8),
+           let recorded = EngineProfile.recordedGameFolder(systemRegistry: text),
+           let folder = Self.macFolder(forWindowsPath: recorded, in: bottlePaths) {
+            candidates.append(folder)
+        }
+        var seen = Set<String>()
+        for folder in candidates {
+            let resolved = folder.resolvingSymlinksInPath()
+            guard seen.insert(resolved.path.lowercased()).inserted else { continue }
+            try writeGameArguments(inFolder: resolved, of: bottlePaths)
+        }
+    }
+    private let gameArgumentsLock = NSLock()
+    /// A Windows path's folder through the prefix's drive links, or nil for a path that is not a plain absolute one.
+    static func macFolder(forWindowsPath path: String, in bottlePaths: BottlePaths) -> URL? {
+        let parts = path.split(separator: "\\", omittingEmptySubsequences: true)
+        guard let drive = parts.first, drive.count == 2, drive.last == ":", drive.first?.isLetter == true,
+              !parts.dropFirst().contains(where: { $0 == "." || $0 == ".." || $0.contains("/") }) else { return nil }
+        return parts.dropFirst().reduce(bottlePaths.prefix.appendingPathComponent("dosdevices/\(drive.lowercased())")) {
+            $0.appendingPathComponent(String($1))
+        }
+    }
+    /// Merges the arguments into commandline.txt in a folder that holds the game's executable and lies inside the
+    /// bottle's prefix: what the registry or a watched event names is the bottle's own programs' word, so Portnaut
+    /// writes nowhere else on the Mac. A commandline.txt that is a link, or not UTF-8, is left as it is rather than
+    /// lose the user's arguments.
+    func writeGameArguments(inFolder game: URL, of bottlePaths: BottlePaths) throws {
+        let fm = FileManager.default
+        guard PortnautPaths.isContained(game, by: bottlePaths.prefix),
+              fm.fileExists(atPath: game.appendingPathComponent(EngineProfile.gameExecutable).path) else { return }
         let file = game.appendingPathComponent("commandline.txt")
-        let exists = FileManager.default.fileExists(atPath: file.path)
+        if (try? fm.destinationOfSymbolicLink(atPath: file.path)) != nil { return }
+        let exists = fm.fileExists(atPath: file.path)
         let data: Data? = exists ? try? Data(contentsOf: file) : nil
         // A file that exists but cannot be read is left alone too.
         if exists && data == nil { return }
@@ -779,15 +815,43 @@ public final class WineService: @unchecked Sendable {
     /// Runs a program of the bottle's drive and returns its exit code, by default after the whole session ends.
     @discardableResult
     func run(_ executable: URL, in bottle: Bottle, arguments: [String] = [], game: Game? = nil, waitForSession: Bool = true) async throws -> Int32 {
+        try await runWine(in: bottle, game: game, directory: executable.deletingLastPathComponent(), waitForSession: waitForSession) {
+            let winPath = try self.paths.bottle(bottle).windowsPath(executable)
+            guard FileManager.default.fileExists(atPath: executable.path) else { throw PortnautError("The Windows program could not be found. Use Locate game or reinstall it.") }
+            return [winPath] + arguments
+        }
+    }
+    /// Starts the bottle's Wine with `arguments` (a program and its arguments, or one of Wine's own commands) as
+    /// every start Portnaut makes does: after requireEngine, and in a profile bottle with the game's arguments
+    /// kept in place while it runs (GameArgumentsWatch). `arguments` is called once the engine is checked. Returns
+    /// Wine's exit code, by default after the whole session ends: a launcher can exit while its child still runs.
+    /// Without that wait the watch ends when Wine's first process exits; the callers that skip it start an installed
+    /// game (launchGame) or a tool, not the launcher session that installs the game.
+    @discardableResult
+    public func runWine(in bottle: Bottle, game: Game? = nil, directory: URL? = nil, waitForSession: Bool = true,
+                        _ arguments: () throws -> [String]) async throws -> Int32 {
+        let bottlePaths = paths.bottle(bottle)
         try await requireEngine(of: bottle)
-        let winPath = try paths.bottle(bottle).windowsPath(executable)
-        guard FileManager.default.fileExists(atPath: executable.path) else { throw PortnautError("The Windows program could not be found. Use Locate game or reinstall it.") }
-        let status = try await ProcessRunner.run(paths.wine(for: bottle), [winPath] + arguments, environment: environment(for: bottle, game: game),
-                                                 directory: executable.deletingLastPathComponent(), log: paths.sessionLog, timeout: nil, allowFailure: true)
-        // A launcher can exit while its child is still running. Track the entire prefix.
+        let watch = bottle.engineProfile == nil ? nil : try GameArgumentsWatch(prefix: bottlePaths.prefix) { [self] folders in
+            // Best effort while the session runs; the write after it reports what still fails.
+            try? writeGameArguments(to: bottlePaths, also: folders)
+            gameArgumentsPass?(folders)
+        }
+        defer { watch?.stop() }
+        // Again now that the watch runs: a session already running could have installed the game since
+        // requireEngine wrote.
+        if watch != nil { try writeGameArguments(to: bottlePaths) }
+        let status = try await ProcessRunner.run(paths.wine(for: bottle), try arguments(), environment: environment(for: bottle, game: game),
+                                                 directory: directory ?? bottlePaths.drive, log: paths.sessionLog, timeout: nil, allowFailure: true)
         if waitForSession { try await waitForSessionEnd(bottle) }
+        if let watch {
+            watch.stop()
+            try writeGameArguments(to: bottlePaths, also: watch.folders)
+        }
         return status
     }
+    /// Called after each pass of a session's GameArgumentsWatch, with the folders it has seen the game in (tests).
+    var gameArgumentsPass: (@Sendable ([URL]) -> Void)?
     public func launchLauncher(_ bottle: Bottle) async throws {
         guard let launcher = bottle.launcher, let executable = paths.bottle(bottle).url(for: launcher.executable) else {
             throw PortnautError("\(bottle.launcher?.title ?? "The launcher") is not installed in \(bottle.name).")
@@ -970,10 +1034,7 @@ public final class WineService: @unchecked Sendable {
 
     /// Wine's Game Controllers panel, which lists and tests controllers as Windows programs see them.
     public func openControllerPanel(_ bottle: Bottle, waitForSession: Bool = true) async throws {
-        try await requireEngine(of: bottle)
-        try await ProcessRunner.run(paths.wine(for: bottle), ["control", "joy.cpl"], environment: environment(for: bottle),
-                                    directory: paths.bottle(bottle).drive, log: paths.sessionLog, timeout: nil, allowFailure: true)
-        if waitForSession { try await waitForSessionEnd(bottle) }
+        try await runWine(in: bottle, waitForSession: waitForSession) { ["control", "joy.cpl"] }
     }
 
     /// Downloads and installs a Windows component, then has Wine prefer its DLLs. With
@@ -1092,10 +1153,9 @@ public final class WineService: @unchecked Sendable {
         try fm.createSymbolicLink(at: drive, withDestinationURL: file.deletingLastPathComponent())
         defer { try? fm.removeItem(at: drive) }
         let windowsFile = "\(Self.installerDrive.uppercased()):\\\(file.lastPathComponent)"
-        let status = try await ProcessRunner.run(paths.wine(for: bottle), (kind == "msi" ? ["msiexec", "/i", windowsFile] : [windowsFile]) + arguments,
-                                                 environment: environment(for: bottle), directory: file.deletingLastPathComponent(),
-                                                 log: paths.sessionLog, timeout: nil, allowFailure: true)
-        if waitForSession { try await waitForSessionEnd(bottle) }
+        let status = try await runWine(in: bottle, directory: file.deletingLastPathComponent(), waitForSession: waitForSession) {
+            (kind == "msi" ? ["msiexec", "/i", windowsFile] : [windowsFile]) + arguments
+        }
         // Installing a launcher into a bottle without one makes it that launcher's bottle.
         var current = try self.bottle(bottle.id)
         if current.launcher == nil, let launcher = Launcher.allCases.first(where: { paths.bottle(current).url(for: $0.executable) != nil }) {

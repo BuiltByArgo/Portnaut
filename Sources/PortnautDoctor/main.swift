@@ -120,9 +120,8 @@ struct PortnautDoctor {
                 // run <bottle> <program> [arguments…]: a Windows program by name or C:\ path.
                 guard arguments.count >= 2 else { throw PortnautError(usage) }
                 let bottle = try service.bottle(arguments[0])
-                let status = try await ProcessRunner.run(service.paths.wine(for: bottle), Array(arguments.dropFirst()), environment: service.environment(for: bottle),
-                                                         directory: service.paths.bottle(bottle).drive, log: service.paths.sessionLog, timeout: 120, allowFailure: true)
-                try await service.waitForSessionEnd(bottle)
+                // Like every start Portnaut makes: a profile bottle is brought to its profile's current build first.
+                let status = try await service.runWine(in: bottle) { Array(arguments.dropFirst()) }
                 print("Exit code \(status); output is in \(service.paths.sessionLog.path)")
             case "launch-game":
                 // The first argument is a bottle when one has that id, otherwise the game.
