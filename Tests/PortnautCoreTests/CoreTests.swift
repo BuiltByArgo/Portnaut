@@ -1239,4 +1239,27 @@ final class CoreTests {
         }
         #expect(Date().timeIntervalSince(start) < 3)
     }
+    @Test func testRunnerReturnsWhenATimedOutChildExitsOnSIGTERM() async throws {
+        // sleep dies on SIGTERM, so the run ends at that exit, before ProcessRunner's SIGKILL grace is over.
+        let timeout = 0.15 // delay: external deadline: the caller's timeout on an unresponsive program (sleep 10), the path under test
+        let grace = Duration.milliseconds(300) // delay: external deadline: ProcessRunner's SIGTERM grace, asserted as a bound, not waited on
+        let start = ContinuousClock.now
+        let log = root.appendingPathComponent("timeout.log")
+        do {
+            try await ProcessRunner.run(URL(fileURLWithPath: "/bin/sleep"), ["10"], log: log, timeout: timeout)
+            Issue.record("The child must time out")
+        } catch {
+            #expect(error.localizedDescription.contains("took too long"))
+        }
+        #expect(ContinuousClock.now - start < .seconds(timeout) + grace)
+        #expect(try String(contentsOf: log, encoding: .utf8).hasSuffix(": took too long\n"))
+    }
+    @Test func testRunnerReturnsTheExitStatus() async throws {
+        let log = root.appendingPathComponent("exit.log")
+        #expect(try await ProcessRunner.run(URL(fileURLWithPath: "/usr/bin/true"), [], log: log) == 0)
+        #expect(try await ProcessRunner.run(URL(fileURLWithPath: "/bin/sh"), ["-c", "exit 7"], log: log, allowFailure: true) == 7)
+        await #expect(throws: (any Error).self) {
+            try await ProcessRunner.run(self.root.appendingPathComponent("no-such-program"), [], log: log)
+        }
+    }
 }
