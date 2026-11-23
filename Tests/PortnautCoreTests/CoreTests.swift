@@ -142,7 +142,39 @@ final class CoreTests {
         #expect(library.newBottleID(for: "Steam & Friends!") == "steam-friends")
         library.bottles = [Bottle(id: "steam", name: "Steam", renderer: .dxmt)]
         #expect(library.newBottleID(for: "Steam") == "steam-2")
+        #expect(library.newBottleID(for: "Steam") { $0 == "steam-2" } == "steam-3")
         #expect(library.newBottleID(for: "😀") == "bottle")
+    }
+    /// A failed creation removes only the folder it reserved: a folder left by a bottle no longer in the
+    /// library keeps its contents, and the new bottle takes the next free name.
+    @Test func testAFailedBottleCreationLeavesAnUnlistedFolderAlone() async throws {
+        let paths = PortnautPaths(root: root)
+        let fm = FileManager.default
+        // A runtime whose Wine records the prefix it was given and fails, so wineboot fails.
+        let ran = root.appendingPathComponent("wine-prefix.txt")
+        for renderer in Renderer.allCases {
+            let wine = paths.wine(for: renderer)
+            try fm.createDirectory(at: wine.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data("#!/bin/sh\necho \"$WINEPREFIX\" > '\(ran.path)'\nexit 1\n".utf8).write(to: wine)
+            try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: wine.path)
+        }
+        try Data().write(to: paths.runtimeMarker)
+        try fm.createDirectory(at: paths.libraries, withIntermediateDirectories: true)
+        try Data().write(to: paths.libraries.appendingPathComponent("libinotify.0.dylib"))
+        #expect(paths.runtimeReady)
+        try paths.saveLibrary(Library())
+        let leftover = paths.bottles.appendingPathComponent("steam/drive_c/saves.dat")
+        try fm.createDirectory(at: leftover.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("kept".utf8).write(to: leftover)
+        let service = WineService(paths: paths, metalShim: nil)
+        await #expect(throws: (any Error).self) {
+            _ = try await service.createBottle(name: "Steam", launcher: .steam, renderer: .dxmt)
+        }
+        #expect((try? String(contentsOf: leftover, encoding: .utf8)) == "kept")
+        let reserved = paths.bottles.appendingPathComponent("steam-2")
+        #expect((try? String(contentsOf: ran, encoding: .utf8)) == reserved.path + "\n")
+        #expect(!fm.fileExists(atPath: reserved.path))
+        #expect(try paths.loadLibrary().bottles.isEmpty)
     }
 
     // MARK: - Renderers and recommendations
