@@ -115,12 +115,12 @@ struct PortnautDoctor {
                 for (key, value) in service.environment(for: bottle).sorted(by: { $0.key < $1.key }) where key.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) {
                     print("export \(key)='\(value.replacingOccurrences(of: "'", with: "'\\''"))'")
                 }
-                print("# wine: \(service.paths.wine(for: bottle.renderer).path)")
+                print("# wine: \(service.paths.wine(for: bottle).path)")
             case "run":
                 // run <bottle> <program> [arguments…]: a Windows program by name or C:\ path.
                 guard arguments.count >= 2 else { throw PortnautError(usage) }
                 let bottle = try service.bottle(arguments[0])
-                let status = try await ProcessRunner.run(service.paths.wine(for: bottle.renderer), Array(arguments.dropFirst()), environment: service.environment(for: bottle),
+                let status = try await ProcessRunner.run(service.paths.wine(for: bottle), Array(arguments.dropFirst()), environment: service.environment(for: bottle),
                                                          directory: service.paths.bottle(bottle).drive, log: service.paths.sessionLog, timeout: 120, allowFailure: true)
                 try await service.waitForSessionEnd(bottle)
                 print("Exit code \(status); output is in \(service.paths.sessionLog.path)")

@@ -128,6 +128,17 @@ public struct PortnautPaths: Sendable {
     }
     public func wine(for renderer: Renderer) -> URL { engine(for: renderer).appendingPathComponent("bin/wine") }
     public func wineserver(for renderer: Renderer) -> URL { engine(for: renderer).appendingPathComponent("bin/wineserver") }
+    /// An engine profile's own engine, libraries and packs.
+    public func profile(_ profile: EngineProfile) -> EngineProfile.Layout { EngineProfile.Layout(root: root.appendingPathComponent("Runtimes/profiles/\(profile.rawValue)")) }
+    public func profileReady(_ profile: EngineProfile) -> Bool {
+        let layout = self.profile(profile)
+        return (try? String(contentsOf: layout.markerFile, encoding: .utf8)) == profile.marker
+            && FileManager.default.isExecutableFile(atPath: layout.engine.appendingPathComponent("bin/wine").path)
+    }
+    /// The engine a bottle runs on: its profile's, else its renderer's.
+    public func engine(for bottle: Bottle) -> URL { bottle.engineProfile.map { profile($0).engine } ?? engine(for: bottle.renderer) }
+    public func wine(for bottle: Bottle) -> URL { engine(for: bottle).appendingPathComponent("bin/wine") }
+    public func wineserver(for bottle: Bottle) -> URL { engine(for: bottle).appendingPathComponent("bin/wineserver") }
     public var libraries: URL { runtime.appendingPathComponent("Libraries") }
     public var bottles: URL { root.appendingPathComponent("Bottles") }
     public var logs: URL { root.appendingPathComponent("Logs") }

@@ -97,6 +97,9 @@ extension WineService {
     /// Starts "Find my best setup" for a game: one round per renderer it can use in its bottle.
     @discardableResult
     public func startSetupTrial(for game: Game, in bottle: Bottle) throws -> SetupTrial {
+        if let profile = bottle.engineProfile {
+            throw PortnautError("\(bottle.name) runs on \(profile.title), which replaces the renderer, so there is nothing to compare.")
+        }
         guard let analysis = analyze(game, in: bottle) else { throw PortnautError("\(game.name)’s files are not at their saved location.") }
         let renderers = SetupTrial.candidates(for: analysis, launcher: bottle.launcher)
         guard renderers.count >= 2 else {

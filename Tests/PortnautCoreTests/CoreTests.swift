@@ -801,8 +801,8 @@ final class CoreTests {
         let devices = bottle.prefix.appendingPathComponent("dosdevices")
         try FileManager.default.createDirectory(at: devices, withIntermediateDirectories: true)
         try FileManager.default.createSymbolicLink(atPath: devices.appendingPathComponent("y:").path, withDestinationPath: "/somewhere/else")
-        try service.mapRuntimeDrive(bottle)
-        try service.mapRuntimeDrive(bottle)
+        try service.mapRuntimeDrive(bottle, to: service.paths.runtime)
+        try service.mapRuntimeDrive(bottle, to: service.paths.runtime)
         #expect(try FileManager.default.destinationOfSymbolicLink(atPath: devices.appendingPathComponent("y:").path) == service.paths.runtime.path)
         #expect(WineService.runtimeDrive != WineService.installerDrive)
     }

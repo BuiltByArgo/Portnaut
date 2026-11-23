@@ -317,9 +317,10 @@ final class AppModel: ObservableObject {
             return library.bottles.isEmpty ? "Portnaut is ready. Create a bottle for your first launcher or game." : "Portnaut is up to date. Your bottles, games and sign-ins were kept."
         }
     }
-    func createBottle(name: String, launcher: Launcher?, renderer: Renderer, windowsVersion: WindowsVersion, easyMode: Bool) {
+    func createBottle(name: String, launcher: Launcher?, renderer: Renderer, engineProfile: EngineProfile?, windowsVersion: WindowsVersion, easyMode: Bool) {
         perform("Creating \(name)…") { [self] in
-            let bottle = try await service.createBottle(name: name, launcher: launcher, renderer: renderer, windowsVersion: windowsVersion, easyMode: easyMode)
+            let bottle = try await service.createBottle(name: name, launcher: launcher, renderer: renderer, engineProfile: engineProfile,
+                                                        windowsVersion: windowsVersion, easyMode: easyMode)
             selectedBottleID = bottle.id
             page = .bottles
             return launcher.map { "\(bottle.name) is ready. Next, install \($0.title)." } ?? "\(bottle.name) is ready. Add a game or run an installer in it."
@@ -442,7 +443,7 @@ final class AppModel: ObservableObject {
         var status = "Starting \(entry.game.name)…"
         if let trial = entry.game.setupTrial, let round = trial.next {
             status = "Best setup, round \(trial.round) of \(trial.renderers.count): starting \(entry.game.name) on \(round.title)…"
-        } else if entry.bottle.easyMode, let choice = service.easyModeChoice(for: entry.game, in: entry.bottle, report: reports[entry.id]), choice.renderer != entry.bottle.renderer {
+        } else if entry.bottle.easyMode, entry.bottle.engineProfile == nil, let choice = service.easyModeChoice(for: entry.game, in: entry.bottle, report: reports[entry.id]), choice.renderer != entry.bottle.renderer {
             status = "Switching \(entry.bottle.name) to \(choice.renderer.title) for \(entry.game.name), then starting it…"
         }
         if entry.game.setupTrial?.next != nil { roundSessions.insert(entry.bottle.id) }
